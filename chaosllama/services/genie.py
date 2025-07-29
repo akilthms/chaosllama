@@ -1,4 +1,5 @@
-class GenieManager():
+
+class GenieService():
     """ The purpose of this class is to manage the various interactions with the Genie Conversational API"""
     _w = WorkspaceClient()
 

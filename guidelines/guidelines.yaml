@@ -1,5 +1,7 @@
 global_guidelines:
-  - <GUIDELINE_1>
-  - <GUIDELINE_2>
+  sql_accuracy: The response and the ground truth are sql queries. Ensure that they are semantically equivalent
+  count_joins: Count the number of joins are the same in both queries
+  dimension_ambiguity: Identify if the query chooses the wrong dimension table
+
 
 
