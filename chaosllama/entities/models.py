@@ -1,11 +1,14 @@
-from dataclasses import dataclass, field, fields, asdict
+from dataclasses import dataclass, field, asdict
 from typing import Optional, Literal, Self
 from dotenv import dotenv_values
 from databricks.connect import DatabricksSession
 import pyspark
 from chaosllama.profiles.config import config
 from pyspark.sql import functions as F
-from pathlib import Path
+from datetime import datetime
+from langchain.prompts import PromptTemplate
+from mlflow.entities import Feedback
+
 
 env = dotenv_values(".env")
 PROFILE = env["DATABRICKS_PROFILE"]
@@ -13,6 +16,7 @@ spark = DatabricksSession.builder.profile(PROFILE).serverless(True).getOrCreate(
 
 CATALOG = config.CATALOG
 SCHEMA = config.SCHEMA
+QUALITY_THRESHOLD = config.QUALITY_THRESHOLD
 
 # ================ ChaosLlama Unity Catalog Tables ====================
 @dataclass
@@ -104,26 +108,10 @@ class AgentSuggestion:
 
 
 @dataclass
-class AgentInput:
-    data_intelligence: list
-    prev_overall_quality_score: float
-    drift_metrics: list = field(default_factory=dict)
-    previous_data_intelligence: dict = field(default_factory=dict)
-    metrics_definition: str = METRICS_DEFINITION
-    quality_threshold: float = QUALITY_THRESHOLD
-    previous_suggestion: str = field(default_factory=str)
-    optional_column_modifications: str = None
-
-
-@dataclass
-class AgentInput_v2:
-    previous_prompt: str
-    previous_overall_quality_score: dict
-    current_overall_quality_score: dict
-    data_intelligence: list = field(default_factory=list)
-    previous_data_intelligence: dict = field(default_factory=list)
-    quality_threshold: float = QUALITY_THRESHOLD
-
+class AgentConfig:
+    system_prompt: PromptTemplate
+    endpoint: str
+    llm_parameters: dict = field(default_factory=lambda: {"temperature": 0.00})
 
 @dataclass
 class AgentInput_v3:
@@ -166,7 +154,7 @@ class GenieTelemetry:
     created_timestamp: datetime.timestamp
     query_result_metadata: dict
     genie_question: str = field(default_factory=str)
-    space_id: str = GENIE_SPACE_ID
+    space_id: str = ""
 
 
 # =================== AI Data Model  ================================
@@ -282,12 +270,7 @@ class DDLHistoryTable(ChaosLlamaTable):
     comment: str = field(default_factory=str)
     table_name: str = field(default_factory=str)
 
-@dataclass
-class ChaosLlamaConfig:
-    mlflow_manager: MLFlowEvalManager
-    genie_manager: GenieManager
-    uc_manager: UCManager
-    agent_config: AgentConfig
+
 
 
 @dataclass
@@ -393,10 +376,12 @@ class EvalSetTable(ChaosLlamaTable):
 
 
 class EvalSetManager:
-    def __init__(self,limit=None, consistency_factor= None, eval_set: Optional[EvalSetTable | str] = None):
+    def __init__(self, table_name:str=None,limit=None, consistency_factor= None, eval_set: Optional[EvalSetTable | str] = None):
         self.eval_set = eval_set
+        self.table_name = table_name
         self.limit = limit
         self.consistency_factor = consistency_factor
+
 
     def create_evalset(self):
         """ Create the evaluation set for the optimization run, based on the provided configuration. """
@@ -407,7 +392,9 @@ class EvalSetManager:
             raise ValueError("eval_set must be a valid unity catalog 3 namespace scheme")
 
         else:
-            self.eval_set = EvalSetTable()
+            print("Created Evaluation Set")
+            data = spark.table(self.table_name)
+            self.eval_set = EvalSetTable(data=data)
 
 
         return self
@@ -415,6 +402,7 @@ class EvalSetManager:
     def prepare_evals(self):
         print("📐 Evaluation Dataset....")
         if not self.eval_set:
+            print("EvalSet does not exist, creating a new one")
             self.create_evalset()
 
         evaluation_dataset = (

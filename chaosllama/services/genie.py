@@ -1,7 +1,58 @@
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service.dashboards import (
+   GenieMessage,
+   GenieGetMessageQueryResultResponse,
+   GenieAttachment, GenieQueryAttachment,
+   GenieConversation, OperationFailed, MessageStatus)
+from typing import Callable
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
+
+from chaosllama.profiles.config import config
+from chaosllama.entities.models import GenieTelemetry, CATALOG
+import mlflow
+from mlflow.entities import SpanType
+from datetime import datetime
+import requests
+from random import random
+from databricks.connect import DatabricksSession
+from dotenv import dotenv_values
+from chaosllama.profiles.config import config
+from pyspark.sql.functions import col as F
+
+env = dotenv_values(".env")
+PROFILE = env["DATABRICKS_PROFILE"]
+SMALL_LLM_ENDPOINTS = config.SMALL_LLM_ENDPOINTS
+spark = DatabricksSession.builder.profile(PROFILE).serverless(True).getOrCreate()
+EVAL_TABLE = f"{config.CATALOG}.{config.SCHEMA}.{config.EVAL_TABLE_NAME}"
+
+_w = WorkspaceClient()
+
+class GenieAgent():
+    """ Refactored Version of the Genie Manager into an Agent to fit into MLFlow 3.0 paradigm"""
+
+    def __init__(self, space_id:str, should_reply:bool = False):
+        self.space_id = space_id
+        self.conversation_id = None
+        self.message_id = None
+        self.client = self._w.genie
+        self.should_reply = should_reply
+        self.genie_mgr = GenieService(space_id=self.space_id,
+                                      should_reply=self.should_reply
+        )
+        self.token = self._w.tokens.create().token_value
+
+    @mlflow.trace(name="🧞‍♂️ Genie Agent")
+    def invoke(self, inputs):
+        question = inputs['question']
+        mlflow.update_current_trace(request_preview=f"{question}")
+        return self.genie_mgr.genie_workflow_v2(inputs).genie_query
 
 class GenieService():
     """ The purpose of this class is to manage the various interactions with the Genie Conversational API"""
-    _w = WorkspaceClient()
+
 
     def __init__(self, space_id: str, should_reply: bool = False):
         self.space_id = space_id
@@ -11,6 +62,7 @@ class GenieService():
         self.should_reply = should_reply
         self.token = self._w.tokens.create().token_value
 
+    @mlflow.trace(span_type=SpanType.TOOL)
     def poll_status(self, func_call: Callable,
                     timeout_seconds: int = 300,
                     poll_interval: int = 30,
@@ -22,13 +74,13 @@ class GenieService():
             # print(f"Current elapsed time: {elapsed}")
             response = func_call(**func_kwargs)
             genie_message_status = response.status
-            print(f"Current status of conversation_id {response.conversation_id}: {genie_message_status}")
+            # print(f"Current status of conversation_id {response.conversation_id}: {genie_message_status}")
 
             if genie_message_status == MessageStatus.FAILED:
                 print(f"❌ Genie message failed: {response=}")
 
             if genie_message_status == EXPECTED_STATUS:
-                print(f"✅ Reached desired status: {EXPECTED_STATUS}")
+                # print(f"✅ Reached desired status: {EXPECTED_STATUS}")
                 return response
 
             elapsed = time.time() - start_time
@@ -69,6 +121,7 @@ class GenieService():
     def start_conversation_and_wait(self, content: str):
         return self.client.start_conversation_and_wait(self.space_id, content)
 
+    @mlflow.trace(span_type=SpanType.TOOL)
     def start_conversation_and_wait_v2(self, content: str = ""):
         HOST = "https://adb-6209649103177418.18.azuredatabricks.net"
         api = f"/api/2.0/genie/spaces/{self.space_id}/start-conversation"
@@ -78,12 +131,13 @@ class GenieService():
         headers = dict(Authorization=f"Bearer {self.token}")
 
         response = requests.post(f"{HOST}/{api}", json=payload, headers=headers).json()
-        print(f"🐜 Starting Conversation")
-        print(response)
+        # print(f"🐜 Starting Conversation")
+        # print(response)
         # print(f"User ID: {response["message"]["user_id"]}")
         # print(f"Conversation ID {response["message"]["conversation_id"]}")
         return GenieMessage.from_dict(response['message'])
 
+    @mlflow.trace
     @retry_message(max_retries=2, delay=10)
     def create_message_and_wait_v2(self, content: str, conversation_id: str = None) -> GenieMessage:
         HOST = "https://adb-6209649103177418.18.azuredatabricks.net"
@@ -102,6 +156,7 @@ class GenieService():
             print(f"{resp=}")
         return GenieMessage.from_dict(resp)
 
+    @mlflow.trace(span_type=SpanType.TOOL)
     def get_message_v2(self, conversation_id="", message_id: str = ""):
         HOST = "https://adb-6209649103177418.18.azuredatabricks.net"
         api = f"/api/2.0/genie/spaces/{self.space_id}/conversations/{conversation_id}/messages/{message_id}"
@@ -130,6 +185,7 @@ class GenieService():
     def delete_conversation(self, conversation_id: str):
         return self.client.delete_conversation(self.space_id, conversation_id)
 
+    @mlflow.trace(span_type=SpanType.TOOL)
     def check_message_attachments(self, message: GenieMessage) -> GenieAttachment:
         if len(message.attachments) > 1:
             raise Exception("Expected only one attachment, but found more")
@@ -137,9 +193,11 @@ class GenieService():
             genie_attachment = message.attachments[0]
         return genie_attachment
 
+    @mlflow.trace(span_type=SpanType.TOOL)
     def check_followup_question(self, attachment: GenieAttachment) -> bool:
         return attachment.query is None
 
+    @mlflow.trace
     def stub_reply(self, message: GenieMessage
                    ):
         # Respond when Genie is asking for clarification due to ambiguity
@@ -148,13 +206,15 @@ class GenieService():
         attachment = self.check_message_attachments(message)
         return message, attachment
 
+    @mlflow.trace
     @retry_message(max_retries=4, delay=3)
-    def get_ground_truth_query(self, original_question):
+    def get_ground_truth_query(self, original_question, eval_table=EVAL_TABLE):
         print(f"🪲 Ground Truth Query for {original_question=}")
         return \
-        spark.table(EVAL_TABLE).filter(F.col("question") == original_question).select("ground_truth_query").first()[
+        spark.table(eval_table).filter(F.col("question") == original_question).select("ground_truth_query").first()[
             "ground_truth_query"]
 
+    @mlflow.trace
     def synthesize_reply(self, context: dict, message: GenieMessage, response_llm: str = SMALL_LLM_ENDPOINTS,
                          params={"max_tokens": 20}):
         original_question = context["original_question"]
@@ -172,13 +232,13 @@ class GenieService():
                 - Ground Source Truth Query: {ground_truth_query}
         """
 
-        reply = w.serving_endpoints.query(
+        reply = _w.serving_endpoints.query(
             name=response_llm,
             **params,
             messages=[
                 ChatMessage(
-                    role=ChatMessageRole.SYSTEM,
-                    content=PROMPT.format(original_question=original_question, ground_truth_query=ground_truth_query)
+                    role=ChatMessageRole.SYSTEM, content=PROMPT.format(original_question=original_question,
+                                                                       ground_truth_query=ground_truth_query)
                 ),
                 ChatMessage(
                     role=ChatMessageRole.USER, content=followup_question
@@ -201,68 +261,66 @@ class GenieService():
         attachment = self.check_message_attachments(message)
         return message, attachment
 
-    def genie_workflow(self, batch, timeout=1):
-        results = []
+    @mlflow.trace(span_type=SpanType.CHAIN)
+    def genie_workflow_v2(self, inputs, timeout=1) -> GenieTelemetry:
 
-        for i, inputs in enumerate(batch):
-            # message = self.start_conversation_and_wait(question)
-            question = inputs[0]
-            original_question = inputs[1]
+        question = inputs["question"]  # [TODO]: Add the system instructions to the question
+        original_question = inputs["question"]
 
-            message = self.start_conversation_and_wait_v2(content=question)
-            print("Initiate Polling After Creating Conversation!")
-            message = self.poll_status(
-                self.get_message_v2,
-                message_id=message.message_id,
+        message = self.start_conversation_and_wait_v2(content=question)
+        message = self.poll_status(
+            self.get_message_v2,
+            message_id=message.message_id,
+            conversation_id=message.conversation_id,
+        )
+
+        if message:
+            genie_attachment = self.check_message_attachments(message)
+            is_followup = self.check_followup_question(genie_attachment)
+            if is_followup:
+                print(f"🗣️ Followup question By Genie: {genie_attachment}")
+                reply_context = {
+                    "original_question": question,
+                    "followup_question": genie_attachment.text.content
+                }
+
+            # TODO: CHANGE VARIABLE NAME MESSAGE TO REPSONSE
+            message, genie_attachment = self.synthesize_reply(reply_context, message) if (
+                        is_followup and self.should_reply) else (message, genie_attachment)
+            genie_query_attachment = genie_attachment.query
+            # print(f"  🤔 Question {i+1}: {question} | Completed ☑️")
+            genie_telem = GenieTelemetry(
+                genie_question=question,
+                original_question=original_question,
+                genie_query=genie_query_attachment.query if genie_query_attachment else None,
                 conversation_id=message.conversation_id,
+                space_id=message.space_id,
+                created_timestamp=message.created_timestamp,
+                statement_id=message.query_result.statement_id if message.query_result else None,
+                genie_generated_sql_thought_process_description=genie_attachment.query.description if genie_attachment.query else None,
+                query_result_metadata=message.query_result.as_dict() if message.query_result else None,
+                row_count=genie_query_attachment.query_result_metadata.row_count if genie_query_attachment else None
             )
 
-            if message:
-                genie_attachment = self.check_message_attachments(message)
-                is_followup = self.check_followup_question(genie_attachment)
-                if is_followup:
-                    print(f"🗣️ Followup question By Genie: {genie_attachment}")
-                    reply_context = {
-                        "original_question": question,
-                        "followup_question": genie_attachment.text.content
-                    }
+            sleep(timeout)
+        else:
+            print("❎ No Message")
+            genie_telem = GenieTelemetry(
+                genie_question=question,
+                original_question=original_question,
+                genie_query=None,
+                conversation_id=None,
+                space_id=self.space_id,
+                created_timestamp=datetime.now().timestamp(),
+                statement_id=None,
+                genie_generated_sql_thought_process_description="Genie Failed to Provide a Response due to Internal Error",
+                query_result_metadata=None,
+                row_count=None
+            )
+        return genie_telem
 
-                # TODO: CHANGE VARIABLE NAME MESSAGE TO REPSONSE
-                message, genie_attachment = self.synthesize_reply(reply_context, message) if (
-                            is_followup and self.should_reply) else (message, genie_attachment)
-                genie_query_attachment = genie_attachment.query
-                # print(f"  🤔 Question {i+1}: {question} | Completed ☑️")
-                genie_telem = GenieTelemetry(
-                    genie_question=question,
-                    original_question=original_question,
-                    genie_query=genie_query_attachment.query if genie_query_attachment else None,
-                    conversation_id=message.conversation_id,
-                    space_id=message.space_id,
-                    created_timestamp=message.created_timestamp,
-                    statement_id=message.query_result.statement_id if message.query_result else None,
-                    genie_generated_sql_thought_process_description=genie_attachment.query.description if genie_attachment.query else None,
-                    query_result_metadata=message.query_result.as_dict() if message.query_result else None,
-                    row_count=genie_query_attachment.query_result_metadata.row_count if genie_query_attachment else None
-                )
-                results.append(genie_telem)
-                sleep(timeout)
-            else:
-                print("❎ No Message")
-                results.append(GenieTelemetry(
-                    genie_question=question,
-                    original_question=original_question,
-                    genie_query=None,
-                    conversation_id=None,
-                    space_id=self.space_id,
-                    created_timestamp=datetime.now().timestamp(),
-                    statement_id=None,
-                    genie_generated_sql_thought_process_description="Genie Failed to Provide a Response due to Internal Error",
-                    query_result_metadata=None,
-                    row_count=None
-                ))
-        return results
 
-    def concurrent_execution(self, questions, batch_size=BATCH_SIZE, n_jobs=N_JOBS):
+    def concurrent_execution(self, questions, batch_size=1, n_jobs=1):
         """ The purpose of this function is to accelarate testing by executing multiple questions in parallel. """
         print(f"∥ Concurrent request {n_jobs}")
         batches = [questions[i:i + batch_size] for i in range(0, len(questions), batch_size)]
@@ -272,10 +330,3 @@ class GenieService():
             results = [future.result() for future in futures]
 
         return [item for sublist in results for item in sublist]  # 📦 unpack results
-
-# Example usage:
-# genie_manager = GenieManager(space_id="your_space_id")
-# questions = ["What is MLflow?", "Explain the concept of overfitting.", "What is a neural network?"]
-# results = genie_manager.concurrent_execution(questions, n_jobs=3)
-# display(results)
-

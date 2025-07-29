@@ -1,10 +1,10 @@
-from chaosllama import logging
+from chaosllama import loggers
 from databricks.sdk.service import catalog
 from pyspark.sql.types import StructType, StructField, StringType, TimestampType
 
 logger_names = ["genie_manager", "mlflow_eval_manager", "uc_manager"]
-loggers = {f"{name}_logger": logging.getLogger(f"{name}_logger") for name in logger_names}
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+loggers = {f"{name}_logger": loggers.getLogger(f"{name}_logger") for name in logger_names}
+formatter = loggers.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 log_schema = StructType([
     StructField("timestamp", TimestampType(), False),
@@ -15,19 +15,19 @@ log_schema = StructType([
 
 
 # Delete Logging Tables
-def delete_logging_tables(loggers: logging.Logger):
+def delete_logging_tables(loggers: loggers.Logger):
     for logger_name, _ in loggers.items():
         UCManager().drop_table(logger_name)
 
 
 # Create Logging Tables
-def create_logging_tables(loggers: logging.Logger):
+def create_logging_tables(loggers: loggers.Logger):
     for logger_name, _ in loggers.items():
         UCManager().create_table(logger_name)
 
 
 class DeltaLogger:
-    def __init__(self, name: str, level=logging.INFO, user=None):
+    def __init__(self, name: str, level=loggers.INFO, user=None):
         self.name = name
         self.logger = loggers[name]
         self.logger.setLevel(level)

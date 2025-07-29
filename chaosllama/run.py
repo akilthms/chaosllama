@@ -1,7 +1,6 @@
-# from chaosllama.chaosllama import ChaosLlama
-from chaosllama.services import genie, mosaic
-from chaosllama.entities.models import EvalSetTable, EvalSetManager
-import chaosllama
+from chaosllama.chaos import ChaosLlama
+from chaosllama.services import genie, mosaic, unity_catalog
+from chaosllama.entities.models import EvalSetManager
 from chaosllama.profiles.config import config
 
 
@@ -13,9 +12,11 @@ if __name__ == "__main__":
     # 👓 Read in Runtime Configurations
 
     # 🧑‍🍳 Prepare Evaluation Data Set
-    evmngr = EvalSetManager(limit=config.LIMIT, consistency_factor=config.CONSISTENCY_FACTOR)
-    eval_set = evmngr.prepare_evals()
-    print("hello world")
+    evmngr = EvalSetManager(table_name=f"{config.CATALOG}.{config.SCHEMA}.{config.EVAL_TABLE_NAME}",
+                            limit=config.LIMIT,
+                            consistency_factor=config.CONSISTENCY_FACTOR)
+    # eval_set = evmngr.prepare_evals()
+    #eval_set.show()
     #
     #
     #
