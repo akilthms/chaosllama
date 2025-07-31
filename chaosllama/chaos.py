@@ -1,7 +1,9 @@
 from chaosllama.services import genie, mosaic, unity_catalog
 # from chaosllama.entities.models import AgentConfig, IntrospectionManager
+from chaosllama.services.introspection import IntrospectionAIAgent
 from dataclasses import dataclass
 import mlflow
+from mlflow.entities import SpanType
 from abc import ABC
 
 from chaosllama.entities.models import AgentConfig, IntrospectionManager
@@ -16,17 +18,56 @@ class ChaosLlamaServicesConfig:
 
 class ChaosLlamaABC(ABC):
     def __init__(self, config: ChaosLlamaServicesConfig = None):
-        self.mlflow_manager = config.mlflow_manager
-        self.genie_manager = config.genie_manager
-        self.uc_manager = config.uc_manager
-        self.agent_config = config.agent_config
+        self.config = config
+        self._configure()
 
-    """
-    
-    """
+    def _configure(self,):
+        self.mlflow_manager = self.config.mlflow_manager
+        self.genie_manager = self.config.genie_manager
+        self.uc_manager = self.config.uc_manager
+        self.agent_config = self.config.agent_config
 
-    def run(self):
-        pass
+    def baseline_evaluation(self, enable_baseline_test: bool = False):
+        """
+        This method is used to run the baseline evaluation test.
+        :param enable_baseline_test: If True, it will run the baseline evaluation test.
+        :return: None
+        """
+        raise NotImplemented()
+
+    def introspect_from_checkpoint(self, enable_checkpoint: bool = False,checkpoint_run_id: str=None, ):
+        raise NotImplemented()
+
+    def optimize(self, feedbacks) -> IntrospectionManager:
+        """
+        This method is used to optimize the system by running the introspection agent.
+        :return: IntrospectionManager
+        """
+        raise NotImplemented()
+
+    def update_dashboard(self, introspection_manager: IntrospectionManager):
+        """
+        This method is used to update the dashboard with the introspection manager data.
+        :param introspection_manager: IntrospectionManager
+        :return: None
+        """
+        raise NotImplemented()
+
+    def run(self, runtime_config: dict) -> (IntrospectionManager, str):
+        """
+        :param runtime_config:
+        :return:
+        """
+        self.baseline_evaluation(enable_baseline_test=runtime_config["enable_baseline_test"])
+
+        feedbacks = self.introspect_from_checkpoint(enable_checkpoint=runtime_config["enable_baseline_test"])
+        introspection_director, mlflow_parent_run = self.optimize(feedbacks)
+
+        self.update_dashboard(introspection_director)
+
+        return introspection_director, mlflow_parent_run
+
+
 
 
 class ChaosLlama():

@@ -1,6 +1,6 @@
-from chaosllama.chaos import ChaosLlama
-from chaosllama.services import genie, mosaic, unity_catalog
-from chaosllama.entities.models import EvalSetManager
+# from chaosllama.chaos import ChaosLlama
+# from chaosllama.services import genie, mosaic, unity_catalog
+from chaosllama.services.evaluation_dataset import EvalSetManager
 from chaosllama.profiles.config import config
 
 
@@ -15,8 +15,16 @@ if __name__ == "__main__":
     evmngr = EvalSetManager(table_name=f"{config.CATALOG}.{config.SCHEMA}.{config.EVAL_TABLE_NAME}",
                             limit=config.LIMIT,
                             consistency_factor=config.CONSISTENCY_FACTOR)
-    # eval_set = evmngr.prepare_evals()
-    #eval_set.show()
+    evmngr.prepare_evals(mode="synthetic")
+
+
+    # 🧑‍🔬Set MLFLow Experiment
+    # mlflow.set_experiment(experiment_id=config.MLFLOW_EXPERIMENTS["🦙ChaosLlama v2"])
+    # Configure Judges
+
+
+
+
     #
     #
     #

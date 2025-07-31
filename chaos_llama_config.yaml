@@ -1,7 +1,7 @@
 # 🤝 Unity Catalog
-CATALOG: "akthom"
-SCHEMA: "chaos_llama"
-CHAOS_ANALYTICS_TABLE_TEMPLATE: "{CATALOG}.{SCHEMA}.chaos_analytics"
+CATALOG: "retail_consumer_goods"
+SCHEMA: "store_ops"
+CHAOS_ANALYTICS_TABLE_TEMPLATE: "${CATALOG}.${SCHEMA}.chaos_analytics"
 EVAL_TABLE_NAME: "eval_set"  # You can set this dynamically if needed
 CHAOS_LLAMA_PROFILE: "dev"
 

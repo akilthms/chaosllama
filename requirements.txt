@@ -10,3 +10,7 @@ mlflow==3.1.4
 marko
 sqlglot
 dspy
+databricks-agents
+databricks-sdk[openai]>=0.35.0
+databricks-langchain
+ipython

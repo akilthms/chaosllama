@@ -8,7 +8,7 @@ from pyspark.sql import functions as F
 from datetime import datetime
 from langchain.prompts import PromptTemplate
 from mlflow.entities import Feedback
-
+import pandas as pd
 
 env = dotenv_values(".env")
 PROFILE = env["DATABRICKS_PROFILE"]
@@ -133,14 +133,21 @@ class MosaicAssessment:
     root_cause_rationale: str = field(default_factory=str)
 
 
+# @dataclass
+# class DataIntelligence:
+#     question: str
+#     genie_generated_query: str
+#     ground_truth_query: str
+#     genie_generated_sql_thought_process_description: str
+#     mosaic_evaluation: list[MosaicAssessment]
+
 @dataclass
 class DataIntelligence:
+    """ Represents the data intelligence genetered by the evaluation harness of mlflow"""
     question: str
-    genie_generated_query: str
+    genie_query: str # Genie Generated Query
     ground_truth_query: str
-    genie_generated_sql_thought_process_description: str
-    mosaic_evaluation: list[MosaicAssessment]
-
+    feedback: list[Feedback]
 
 @dataclass
 class GenieTelemetry:
@@ -163,7 +170,7 @@ class IntrospectionManager:
     genie_telemetry: list[GenieTelemetry] = field(default_factory=list)
     introspections: list[dict] = field(default_factory=list)
     metadata_suggestions: list[AgentSuggestion] = field(default_factory=list)
-    data_intelligence: list[dict] = field(default_factory=list)
+    data_intelligence: list[DataIntelligence] = field(default_factory=list)
     feedback: list[Feedback] = field(default_factory=list)
     overall_quality_score: list[dict] = field(default_factory=list)
     optimization_id: int = field(default_factory=int)
@@ -351,8 +358,10 @@ class EvalSetTable(ChaosLlamaTable):
         return self
 
     def limit(self, limit=None) -> Self:
-        if limit:
+        if limit and isinstance(self.data, pyspark.sql.DataFrame):
             self.data = self.data.limit(limit)
+        elif limit and isinstance(self.data, pd.DataFrame):
+            self.data = self.data.head(limit)
         return self
 
     def replicate_rows(self, consistency_factor: int = 1) -> Self:
@@ -366,53 +375,28 @@ class EvalSetTable(ChaosLlamaTable):
         Returns:
             DataFrame: A new DataFrame with each row duplicated `n` times
         """
-        dup_logic =  F.explode(F.array([F.lit(i) for i in range(consistency_factor)]))
-        self.data = (
+
+        if isinstance(self.data, pyspark.sql.DataFrame):
+            dup_logic =  F.explode(F.array([F.lit(i) for i in range(consistency_factor)]))
+            self.data = (
                         self.data
                             .withColumn("dup", dup_logic)
                             .drop("dup")
                      )
-        return self
-
-
-class EvalSetManager:
-    def __init__(self, table_name:str=None,limit=None, consistency_factor= None, eval_set: Optional[EvalSetTable | str] = None):
-        self.eval_set = eval_set
-        self.table_name = table_name
-        self.limit = limit
-        self.consistency_factor = consistency_factor
-
-
-    def create_evalset(self):
-        """ Create the evaluation set for the optimization run, based on the provided configuration. """
-        if isinstance(self.eval_set, str) and self.eval_set.count("." ) == 2:
-            self.eval_set = spark.table(self.eval_set)
-
-        elif isinstance(self.eval_set, str) and self.eval_set.count("." ) != 2:
-            raise ValueError("eval_set must be a valid unity catalog 3 namespace scheme")
-
-        else:
-            print("Created Evaluation Set")
-            data = spark.table(self.table_name)
-            self.eval_set = EvalSetTable(data=data)
-
+        elif isinstance(self.data, pd.DataFrame):
+            self.data = pd.concat([self.data] * consistency_factor, ignore_index=True)
 
         return self
 
-    def prepare_evals(self):
-        print("📐 Evaluation Dataset....")
-        if not self.eval_set:
-            print("EvalSet does not exist, creating a new one")
-            self.create_evalset()
 
-        evaluation_dataset = (
-            self.eval_set
-                .limit(self.limit)
-                .replicate_rows(self.consistency_factor)
-        )
 
-        evaluation_dataset.data.show()
-        return evaluation_dataset
+@dataclass
+class SourceDocument:
+    """ Represents a source document for the synthetic data generation """
+    content: str
+    doc_uri: Optional[str] = None
 
+    def to_dict(self):
+        return asdict(self)
 
 

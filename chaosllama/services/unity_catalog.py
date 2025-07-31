@@ -27,9 +27,8 @@ class UCService:
         """Provides access to the shared WorkspaceClient instance"""
         return UCService._workspace_client
 
-    def get_tables(self):
+    def get_tables(self) -> list[str]:
         tables = [ table.name for table in list(self.w.tables.list(self.catalog, self.schema))]
-        self.tables = tables
         return tables
 
     def change_col_desc(self, table_name :str, column_name :str ,new_comment :str) -> None:

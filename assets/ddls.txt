@@ -1,0 +1,1465 @@
+CREATE TABLE retail_consumer_goods.store_ops.appointments (
+  appointment_id VARCHAR(20) NOT NULL,
+  customer_id VARCHAR(20) NOT NULL,
+  customer_name VARCHAR(100) NOT NULL,
+  appointment_type VARCHAR(50) NOT NULL,
+  appointment_date DATE NOT NULL,
+  appointment_time TIMESTAMP NOT NULL,
+  duration_minutes INT NOT NULL,
+  store_id VARCHAR(20) NOT NULL,
+  stylist_id VARCHAR(20),
+  stylist_name VARCHAR(100),
+  status VARCHAR(20) NOT NULL,
+  notes STRING,
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP,
+  CONSTRAINT `appointments_pk` PRIMARY KEY (`appointment_id`))
+USING delta
+TBLPROPERTIES (
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE VIEW store_ops.best_personal_shopping_associates (
+  store_id COMMENT 'Store where the employee works',
+  store_name COMMENT 'Name of the store location',
+  employee_id COMMENT 'Unique identifier for the employee',
+  employee_name COMMENT 'Full name of the employee',
+  position_title COMMENT 'Job title/position of the employee',
+  personal_shopping_sessions COMMENT 'Number of personal shopping sessions conducted',
+  customer_satisfaction_score COMMENT 'Average customer satisfaction rating (1.0-5.0)',
+  product_knowledge_score COMMENT 'Product knowledge assessment score (1.0-5.0)',
+  overall_performance_score COMMENT 'Calculated overall performance score (1.0-5.0)',
+  average_quality_score COMMENT 'Average quality rating for completed tasks (1.0-5.0)',
+  customer_compliments COMMENT 'Number of customer compliments received',
+  customer_complaints COMMENT 'Number of customer complaints received',
+  sales_achievement_percentage COMMENT 'Percentage of sales target achieved',
+  personal_shopping_expertise_score,
+  availability_status,
+  store_rank)
+WITH SCHEMA COMPENSATION
+AS SELECT 
+    store_id,
+    store_name,
+    employee_id,
+    employee_name,
+    position_title,
+    personal_shopping_sessions,
+    customer_satisfaction_score,
+    product_knowledge_score,
+    overall_performance_score,
+    average_quality_score,
+    customer_compliments,
+    customer_complaints,
+    sales_achievement_percentage,
+    -- Calculate personal shopping expertise score
+    ROUND(
+        (personal_shopping_sessions * 0.3 + 
+         customer_satisfaction_score * 0.25 + 
+         product_knowledge_score * 0.25 + 
+         overall_performance_score * 0.2) * 20, 2
+    ) as personal_shopping_expertise_score,
+    -- Availability indicator based on attendance and current workload
+    CASE 
+        WHEN attendance_rate >= 98.0 AND task_completion_rate >= 95.0 THEN 'Highly Available'
+        WHEN attendance_rate >= 95.0 AND task_completion_rate >= 90.0 THEN 'Available'
+        ELSE 'Limited Availability'
+    END as availability_status,
+    ROW_NUMBER() OVER (PARTITION BY store_id ORDER BY 
+        personal_shopping_sessions DESC, 
+        customer_satisfaction_score DESC, 
+        product_knowledge_score DESC
+    ) as store_rank
+FROM employee_performance
+WHERE department = 'Womens Fashion'
+    AND performance_period = 'monthly' 
+    AND period_start_date = DATE_TRUNC('month', CURRENT_DATE())
+    AND employment_status = 'active'
+ORDER BY store_id, personal_shopping_sessions DESC, customer_satisfaction_score DESC
+
+CREATE TABLE retail_consumer_goods.store_ops.competitive_insights (
+  insight_id BIGINT,
+  customer_id STRING,
+  primary_brand STRING,
+  alternative_brand STRING,
+  decision_factor STRING,
+  price_comparison DECIMAL(10,2),
+  feature_comparison STRING,
+  customer_comment STRING,
+  purchase_decision STRING,
+  interaction_date DATE,
+  store_id INT,
+  associate_id STRING)
+USING delta
+TBLPROPERTIES (
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE TABLE retail_consumer_goods.store_ops.customer_brand_profiles (
+  customer_id STRING,
+  age_group STRING,
+  lifestyle_category STRING,
+  brand_preference STRING,
+  price_sensitivity STRING,
+  shopping_pattern STRING,
+  fitness_level STRING,
+  purchase_frequency STRING,
+  avg_spend_per_visit DECIMAL(10,2),
+  preferred_shopping_times STRING,
+  store_id INT,
+  last_purchase_date DATE,
+  total_lifetime_value DECIMAL(12,2))
+USING delta
+TBLPROPERTIES (
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE TABLE retail_consumer_goods.store_ops.customer_feedback (
+  feedback_id BIGINT,
+  customer_id STRING,
+  product_id BIGINT,
+  sku STRING,
+  rating INT,
+  review_text STRING,
+  feedback_category STRING,
+  sentiment STRING,
+  purchase_date DATE,
+  review_date DATE,
+  store_id INT,
+  verified_purchase BOOLEAN,
+  helpful_votes INT)
+USING delta
+TBLPROPERTIES (
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE VIEW store_ops.customer_preparation_summary (
+  customer_id COMMENT 'Unique identifier for the customer',
+  customer_name COMMENT 'Full name of the customer',
+  preferred_name COMMENT 'Preferred name or nickname for personalized service',
+  customer_tier COMMENT 'Customer tier (Premium, Gold, Silver, Standard, etc.)',
+  preferred_store_id COMMENT 'Preferred store location for shopping',
+  store_name COMMENT 'Display name of the store location (e.g., Downtown, Uptown)',
+  next_appointment_date COMMENT 'Date and time of next scheduled appointment',
+  appointment_type COMMENT 'Type of upcoming appointment (personal styling, wardrobe consultation, etc.)',
+  appointment_purpose COMMENT 'Purpose or occasion for upcoming appointment',
+  style_preferences COMMENT 'Fashion style preferences and styling notes',
+  size_information COMMENT 'Clothing sizes and fit preferences (JSON format)',
+  color_preferences COMMENT 'Preferred colors and color dislikes',
+  brand_preferences COMMENT 'Preferred and avoided brands',
+  budget_range COMMENT 'Typical spending range per visit',
+  preparation_notes COMMENT 'Special preparation notes for upcoming visit',
+  service_notes COMMENT 'Important service notes and preferences',
+  special_occasions COMMENT 'Important dates (birthday, anniversary, etc.) in JSON format',
+  dietary_restrictions COMMENT 'Any dietary restrictions for refreshments',
+  accessibility_needs COMMENT 'Any accessibility requirements',
+  requires_manager_greeting COMMENT 'Whether manager should personally greet customer',
+  customer_alerts COMMENT 'Special alerts or flags for staff attention',
+  preferred_stylist_id COMMENT 'Preferred personal stylist',
+  preferred_stylist_name COMMENT 'Full name of the employee',
+  stylist_experience COMMENT 'Number of personal shopping sessions conducted',
+  stylist_rating COMMENT 'Average customer satisfaction rating (1.0-5.0)',
+  customer_satisfaction COMMENT 'Average satisfaction score from feedback (1.0-5.0)',
+  total_lifetime_spend COMMENT 'Total amount spent as customer',
+  average_transaction_value COMMENT 'Average transaction amount',
+  last_visit_date COMMENT 'Date of last store visit',
+  visit_frequency COMMENT 'How often customer visits (weekly, monthly, seasonal)',
+  days_since_last_visit,
+  hours_until_appointment)
+WITH SCHEMA COMPENSATION
+AS SELECT 
+    c.customer_id,
+    c.customer_name,
+    c.preferred_name,
+    c.customer_tier,
+    c.preferred_store_id,
+    s.store_name,
+    c.next_appointment_date,
+    c.appointment_type,
+    c.appointment_purpose,
+    c.style_preferences,
+    c.size_information,
+    c.color_preferences,
+    c.brand_preferences,
+    c.budget_range,
+    c.preparation_notes,
+    c.service_notes,
+    c.special_occasions,
+    c.dietary_restrictions,
+    c.accessibility_needs,
+    c.requires_manager_greeting,
+    c.customer_alerts,
+    c.preferred_stylist_id,
+    e.employee_name as preferred_stylist_name,
+    e.personal_shopping_sessions as stylist_experience,
+    e.customer_satisfaction_score as stylist_rating,
+    c.satisfaction_score as customer_satisfaction,
+    c.total_lifetime_spend,
+    c.average_transaction_value,
+    c.last_visit_date,
+    c.visit_frequency,
+    -- Calculate days since last visit
+    DATEDIFF(CURRENT_DATE(), c.last_visit_date) as days_since_last_visit,
+    -- Calculate hours until appointment
+    ROUND((UNIX_TIMESTAMP(c.next_appointment_date) - UNIX_TIMESTAMP(CURRENT_TIMESTAMP())) / 3600, 1) as hours_until_appointment
+FROM customers c
+LEFT JOIN dim_stores s ON c.preferred_store_id = s.store_id
+LEFT JOIN employee_performance e ON c.preferred_stylist_id = e.employee_id
+WHERE c.customer_status = 'active'
+ORDER BY c.next_appointment_date ASC
+
+CREATE TABLE retail_consumer_goods.store_ops.customers (
+  customer_id STRING COMMENT 'Unique identifier for the customer',
+  customer_name STRING COMMENT 'Full name of the customer',
+  preferred_name STRING COMMENT 'Preferred name or nickname for personalized service',
+  customer_tier STRING COMMENT 'Customer tier (Premium, Gold, Silver, Standard, etc.)',
+  member_since DATE COMMENT 'Date when customer became a member',
+  email_address STRING COMMENT 'Primary email address',
+  phone_number STRING COMMENT 'Primary phone number',
+  preferred_contact_method STRING COMMENT 'Preferred communication method (email, phone, text)',
+  preferred_store_id STRING COMMENT 'Preferred store location for shopping',
+  preferred_stylist_id STRING COMMENT 'Preferred personal stylist',
+  preferred_appointment_time STRING COMMENT 'Preferred time slots for appointments',
+  style_preferences STRING COMMENT 'Fashion style preferences and styling notes',
+  size_information STRING COMMENT 'Clothing sizes and fit preferences (JSON format)',
+  color_preferences STRING COMMENT 'Preferred colors and color dislikes',
+  brand_preferences STRING COMMENT 'Preferred and avoided brands',
+  budget_range STRING COMMENT 'Typical spending range per visit',
+  total_lifetime_spend DOUBLE COMMENT 'Total amount spent as customer',
+  average_transaction_value DOUBLE COMMENT 'Average transaction amount',
+  last_visit_date DATE COMMENT 'Date of last store visit',
+  last_purchase_date DATE COMMENT 'Date of last purchase',
+  visit_frequency STRING COMMENT 'How often customer visits (weekly, monthly, seasonal)',
+  seasonal_preferences STRING COMMENT 'Seasonal shopping patterns and preferences',
+  special_occasions STRING COMMENT 'Important dates (birthday, anniversary, etc.) in JSON format',
+  dietary_restrictions STRING COMMENT 'Any dietary restrictions for refreshments',
+  accessibility_needs STRING COMMENT 'Any accessibility requirements',
+  language_preference STRING COMMENT 'Preferred language for service',
+  cultural_considerations STRING COMMENT 'Cultural preferences or considerations',
+  styling_sessions INT COMMENT 'Number of personal styling sessions completed',
+  satisfaction_score DOUBLE COMMENT 'Average satisfaction score from feedback (1.0-5.0)',
+  last_feedback STRING COMMENT 'Most recent customer feedback or comments',
+  service_notes STRING COMMENT 'Important service notes and preferences',
+  next_appointment_date TIMESTAMP COMMENT 'Date and time of next scheduled appointment',
+  appointment_type STRING COMMENT 'Type of upcoming appointment (personal styling, wardrobe consultation, etc.)',
+  appointment_purpose STRING COMMENT 'Purpose or occasion for upcoming appointment',
+  preparation_notes STRING COMMENT 'Special preparation notes for upcoming visit',
+  family_members STRING COMMENT 'Family member information for gift suggestions (JSON format)',
+  gift_history STRING COMMENT 'Previous gifts purchased and occasions (JSON format)',
+  referral_source STRING COMMENT 'How customer was referred to the store',
+  customer_status STRING COMMENT 'Current status (active, inactive, on_hold)',
+  priority_level STRING COMMENT 'Service priority level (high, medium, standard)',
+  requires_manager_greeting BOOLEAN COMMENT 'Whether manager should personally greet customer',
+  customer_alerts STRING COMMENT 'Special alerts or flags for staff attention',
+  created_at TIMESTAMP COMMENT 'Timestamp when record was created',
+  updated_at TIMESTAMP COMMENT 'Timestamp when record was last updated',
+  created_by STRING COMMENT 'System or user who created the record',
+  updated_by STRING COMMENT 'System or user who last updated the record')
+USING delta
+COMMENT 'Customer information table for personalized service and appointment preparation'
+TBLPROPERTIES (
+  'delta.autoOptimize.autoCompact' = 'true',
+  'delta.autoOptimize.optimizeWrite' = 'true',
+  'delta.enableChangeDataFeed' = 'true',
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.changeDataFeed' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE TABLE retail_consumer_goods.store_ops.dais_rct_multi_agent_1_payload (
+  request_date DATE,
+  databricks_request_id STRING,
+  client_request_id STRING,
+  request_time TIMESTAMP,
+  status_code INT,
+  sampling_fraction DOUBLE,
+  execution_duration_ms BIGINT,
+  request STRING,
+  response STRING,
+  served_entity_id STRING,
+  logging_error_codes ARRAY<STRING>,
+  requester STRING)
+USING delta
+CLUSTER BY (request_date)
+TBLPROPERTIES (
+  'delta.checkpointPolicy' = 'v2',
+  'delta.enableDeletionVectors' = 'true',
+  'delta.enableRowTracking' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.feature.rowTracking' = 'supported',
+  'delta.feature.v2Checkpoint' = 'supported')
+
+CREATE TABLE retail_consumer_goods.store_ops.dais_rct_multi_agent_1_payload_assessment_logs (
+  request_id STRING,
+  step_id STRING,
+  source STRUCT<type: STRING, id: STRING, tags: MAP<STRING, STRING>>,
+  timestamp TIMESTAMP,
+  text_assessment STRUCT<step_id: STRING, ratings: MAP<STRING, STRUCT<value: STRING, double_value: DOUBLE, rationale: STRING>>, free_text_comment: STRING, suggested_output: STRING>,
+  retrieval_assessment STRUCT<position: INT, step_id: STRING, ratings: MAP<STRING, STRUCT<value: STRING, double_value: DOUBLE, rationale: STRING>>, free_text_comment: STRING>,
+  schema_version STRING)
+USING delta
+TBLPROPERTIES (
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE TABLE retail_consumer_goods.store_ops.dais_rct_multi_agent_1_payload_request_logs (
+  request_date DATE,
+  databricks_request_id STRING,
+  client_request_id STRING,
+  request_time TIMESTAMP,
+  status_code INT,
+  sampling_fraction DOUBLE,
+  execution_duration_ms BIGINT,
+  request_raw STRING,
+  response_raw STRING,
+  served_entity_id STRING,
+  logging_error_codes ARRAY<STRING>,
+  requester STRING,
+  timestamp TIMESTAMP,
+  trace STRING,
+  conversation_id STRING,
+  request STRING,
+  response STRING,
+  error_message STRING,
+  error_code STRING,
+  schema_version STRING)
+USING delta
+TBLPROPERTIES (
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE TABLE retail_consumer_goods.store_ops.dais_rct_multi_agent_2_payload (
+  request_date DATE,
+  databricks_request_id STRING,
+  client_request_id STRING,
+  request_time TIMESTAMP,
+  status_code INT,
+  sampling_fraction DOUBLE,
+  execution_duration_ms BIGINT,
+  request STRING,
+  response STRING,
+  served_entity_id STRING,
+  logging_error_codes ARRAY<STRING>,
+  requester STRING)
+USING delta
+CLUSTER BY (request_date)
+TBLPROPERTIES (
+  'delta.checkpointPolicy' = 'v2',
+  'delta.enableDeletionVectors' = 'true',
+  'delta.enableRowTracking' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.feature.rowTracking' = 'supported',
+  'delta.feature.v2Checkpoint' = 'supported')
+
+CREATE TABLE retail_consumer_goods.store_ops.dais_rct_multi_agent_2_payload_assessment_logs (
+  request_id STRING,
+  step_id STRING,
+  source STRUCT<type: STRING, id: STRING, tags: MAP<STRING, STRING>>,
+  timestamp TIMESTAMP,
+  text_assessment STRUCT<step_id: STRING, ratings: MAP<STRING, STRUCT<value: STRING, double_value: DOUBLE, rationale: STRING>>, free_text_comment: STRING, suggested_output: STRING>,
+  retrieval_assessment STRUCT<position: INT, step_id: STRING, ratings: MAP<STRING, STRUCT<value: STRING, double_value: DOUBLE, rationale: STRING>>, free_text_comment: STRING>,
+  schema_version STRING)
+USING delta
+TBLPROPERTIES (
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE TABLE retail_consumer_goods.store_ops.dais_rct_multi_agent_2_payload_request_logs (
+  request_date DATE,
+  databricks_request_id STRING,
+  client_request_id STRING,
+  request_time TIMESTAMP,
+  status_code INT,
+  sampling_fraction DOUBLE,
+  execution_duration_ms BIGINT,
+  request_raw STRING,
+  response_raw STRING,
+  served_entity_id STRING,
+  logging_error_codes ARRAY<STRING>,
+  requester STRING,
+  timestamp TIMESTAMP,
+  trace STRING,
+  conversation_id STRING,
+  request STRING,
+  response STRING,
+  error_message STRING,
+  error_code STRING,
+  schema_version STRING)
+USING delta
+TBLPROPERTIES (
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE TABLE retail_consumer_goods.store_ops.dais_rct_multi_agent_3_payload (
+  request_date DATE,
+  databricks_request_id STRING,
+  client_request_id STRING,
+  request_time TIMESTAMP,
+  status_code INT,
+  sampling_fraction DOUBLE,
+  execution_duration_ms BIGINT,
+  request STRING,
+  response STRING,
+  served_entity_id STRING,
+  logging_error_codes ARRAY<STRING>,
+  requester STRING)
+USING delta
+CLUSTER BY (request_date)
+TBLPROPERTIES (
+  'delta.checkpointPolicy' = 'v2',
+  'delta.enableDeletionVectors' = 'true',
+  'delta.enableRowTracking' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.feature.rowTracking' = 'supported',
+  'delta.feature.v2Checkpoint' = 'supported')
+
+CREATE TABLE retail_consumer_goods.store_ops.dais_rct_multi_agent_3_payload_assessment_logs (
+  request_id STRING,
+  step_id STRING,
+  source STRUCT<type: STRING, id: STRING, tags: MAP<STRING, STRING>>,
+  timestamp TIMESTAMP,
+  text_assessment STRUCT<step_id: STRING, ratings: MAP<STRING, STRUCT<value: STRING, double_value: DOUBLE, rationale: STRING>>, free_text_comment: STRING, suggested_output: STRING>,
+  retrieval_assessment STRUCT<position: INT, step_id: STRING, ratings: MAP<STRING, STRUCT<value: STRING, double_value: DOUBLE, rationale: STRING>>, free_text_comment: STRING>,
+  schema_version STRING)
+USING delta
+TBLPROPERTIES (
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE TABLE retail_consumer_goods.store_ops.dais_rct_multi_agent_3_payload_request_logs (
+  request_date DATE,
+  databricks_request_id STRING,
+  client_request_id STRING,
+  request_time TIMESTAMP,
+  status_code INT,
+  sampling_fraction DOUBLE,
+  execution_duration_ms BIGINT,
+  request_raw STRING,
+  response_raw STRING,
+  served_entity_id STRING,
+  logging_error_codes ARRAY<STRING>,
+  requester STRING,
+  timestamp TIMESTAMP,
+  trace STRING,
+  conversation_id STRING,
+  request STRING,
+  response STRING,
+  error_message STRING,
+  error_code STRING,
+  schema_version STRING)
+USING delta
+TBLPROPERTIES (
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE TABLE retail_consumer_goods.store_ops.dais_rct_multi_agent_payload (
+  request_date DATE,
+  databricks_request_id STRING,
+  client_request_id STRING,
+  request_time TIMESTAMP,
+  status_code INT,
+  sampling_fraction DOUBLE,
+  execution_duration_ms BIGINT,
+  request STRING,
+  response STRING,
+  served_entity_id STRING,
+  logging_error_codes ARRAY<STRING>,
+  requester STRING)
+USING delta
+TBLPROPERTIES (
+  'delta.minReaderVersion' = '1',
+  'delta.minWriterVersion' = '2')
+
+CREATE VIEW store_ops.department_performance_summary (
+  department COMMENT 'Primary department where employee works (e.g., Electronics, Footwear, Customer Service)',
+  store_name COMMENT 'Name of the store location',
+  total_employees,
+  avg_performance_score,
+  avg_sales_achievement,
+  avg_task_completion_rate,
+  avg_customer_satisfaction,
+  avg_attendance_rate,
+  total_department_sales,
+  total_tasks_completed,
+  total_customer_compliments,
+  total_customer_complaints)
+WITH SCHEMA COMPENSATION
+AS SELECT 
+    department,
+    store_name,
+    COUNT(*) as total_employees,
+    AVG(overall_performance_score) as avg_performance_score,
+    AVG(sales_achievement_percentage) as avg_sales_achievement,
+    AVG(task_completion_rate) as avg_task_completion_rate,
+    AVG(customer_satisfaction_score) as avg_customer_satisfaction,
+    AVG(attendance_rate) as avg_attendance_rate,
+    SUM(total_sales_amount) as total_department_sales,
+    SUM(total_tasks_completed) as total_tasks_completed,
+    SUM(customer_compliments) as total_customer_compliments,
+    SUM(customer_complaints) as total_customer_complaints
+FROM employee_performance
+WHERE performance_period = 'monthly' 
+    AND period_start_date = DATE_TRUNC('month', CURRENT_DATE())
+    AND employment_status = 'active'
+GROUP BY department, store_name
+ORDER BY avg_performance_score DESC
+
+CREATE TABLE retail_consumer_goods.store_ops.dim_stores (
+  store_id INT COMMENT 'Unique identifier for each store location (e.g., 1, 2)',
+  store_name STRING COMMENT 'Display name of the store location (e.g., Downtown, Uptown)',
+  store_address STRING COMMENT 'Street address of the store location',
+  store_city STRING COMMENT 'City where the store is located',
+  store_state STRING COMMENT 'State or province abbreviation (e.g., NY, CA, TX)',
+  store_zipcode STRING COMMENT 'Postal/ZIP code for the store location',
+  store_country STRING COMMENT 'Country where the store is located (e.g., USA)',
+  store_phone STRING COMMENT 'Primary contact phone number for the store',
+  store_email STRING COMMENT 'Primary contact email address for the store',
+  store_manager_id STRING COMMENT 'Identifier of the current store manager',
+  opening_date DATE COMMENT 'Date when the store first opened for business',
+  store_area_sqft DOUBLE COMMENT 'Total floor space of the store in square feet',
+  is_open_24_hours BOOLEAN COMMENT 'Flag indicating if the store is open 24 hours',
+  latitude DOUBLE COMMENT 'Geographic latitude coordinate of the store location',
+  longitude DOUBLE COMMENT 'Geographic longitude coordinate of the store location',
+  region_id STRING COMMENT 'Identifier for the region the store belongs to',
+  store_details_text STRING COMMENT 'Detailed text description of the store including location, hours, and services',
+  store_type STRING COMMENT 'Type/category of store (flagship, outlet, express, popup)',
+  store_size_sqft INT COMMENT 'Total floor space of the store in square feet',
+  store_rating DOUBLE COMMENT 'Customer rating of the store on a scale of 1.0 to 5.0',
+  store_hours STRING COMMENT 'Operating hours for each day of the week in JSON format',
+  timezone STRING COMMENT 'Time zone identifier for the store location (e.g., America/New_York)',
+  is_active BOOLEAN COMMENT 'Flag indicating whether the store is currently operational',
+  last_renovation_date DATE COMMENT 'Date of the most recent store renovation or major update',
+  parking_spaces INT COMMENT 'Number of customer parking spaces available',
+  has_pharmacy BOOLEAN COMMENT 'Flag indicating if the store includes a pharmacy department',
+  has_grocery BOOLEAN COMMENT 'Flag indicating if the store includes a grocery department',
+  has_electronics BOOLEAN COMMENT 'Flag indicating if the store includes an electronics department',
+  has_clothing BOOLEAN COMMENT 'Flag indicating if the store includes a clothing department',
+  has_home_goods BOOLEAN COMMENT 'Flag indicating if the store includes a home goods department',
+  created_at TIMESTAMP COMMENT 'Timestamp when this store record was created',
+  updated_at TIMESTAMP COMMENT 'Timestamp when this store record was last updated')
+USING delta
+TBLPROPERTIES (
+  'delta.autoOptimize.autoCompact' = 'true',
+  'delta.autoOptimize.optimizeWrite' = 'true',
+  'delta.enableChangeDataFeed' = 'true',
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.changeDataFeed' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE VIEW store_ops.employee_daily_tasks (
+  task_id COMMENT 'Unique identifier for each task (UUID or sequential ID)',
+  employee_id COMMENT 'Employee ID who is assigned to complete the task',
+  store_id COMMENT 'Store location where the task should be performed',
+  task_title COMMENT 'Brief descriptive title of the task',
+  task_description COMMENT 'Detailed description of what needs to be accomplished',
+  task_type COMMENT 'Type of task: BOPIS, Service, Restock, Cleaning, Training, Administrative, Customer_Service, Inventory',
+  task_category COMMENT 'Category grouping: Operations, Customer_Service, Inventory_Management, Maintenance, Administrative',
+  priority_level COMMENT 'Task priority: Low, Medium, High, Critical, Urgent',
+  task_status COMMENT 'Current status: Pending, In_Progress, Completed, Cancelled, On_Hold, Overdue',
+  due_time COMMENT 'Specific time when task should be completed',
+  estimated_duration_minutes COMMENT 'Estimated time to complete the task in minutes',
+  customer_name COMMENT 'Customer name for easy identification',
+  order_number COMMENT 'Customer-facing order number for reference',
+  product_name COMMENT 'Product name for easy identification',
+  location_details COMMENT 'Specific location within store (e.g., Floor 2, Electronics Section, Aisle 5)',
+  department COMMENT 'Department where the task should be performed (e.g., Electronics, Grocery)',
+  notes COMMENT 'Notes added during task execution for progress tracking',
+  is_overdue,
+  priority_sort_order)
+WITH SCHEMA COMPENSATION
+AS SELECT 
+    task_id,
+    employee_id,
+    store_id,
+    task_title,
+    task_description,
+    task_type,
+    task_category,
+    priority_level,
+    task_status,
+    due_time,
+    estimated_duration_minutes,
+    customer_name,
+    order_number,
+    product_name,
+    location_details,
+    department,
+    notes,
+    CASE 
+        WHEN due_time IS NOT NULL AND due_time < CURRENT_TIMESTAMP() AND task_status IN ('Pending', 'In_Progress') 
+        THEN TRUE 
+        ELSE FALSE 
+    END AS is_overdue,
+    CASE 
+        WHEN priority_level IN ('Critical', 'Urgent') THEN 1
+        WHEN priority_level = 'High' THEN 2
+        WHEN priority_level = 'Medium' THEN 3
+        ELSE 4
+    END AS priority_sort_order
+FROM employee_tasks
+WHERE assigned_date = CURRENT_DATE()
+ORDER BY priority_sort_order, due_time
+
+CREATE TABLE retail_consumer_goods.store_ops.employee_performance (
+  employee_id STRING COMMENT 'Unique identifier for the employee',
+  employee_name STRING COMMENT 'Full name of the employee',
+  store_id STRING COMMENT 'Store where the employee works',
+  store_name STRING COMMENT 'Name of the store location',
+  department STRING COMMENT 'Primary department where employee works (e.g., Electronics, Footwear, Customer Service)',
+  position_title STRING COMMENT 'Job title/position of the employee',
+  manager_id STRING COMMENT 'Employee ID of direct manager',
+  hire_date DATE COMMENT 'Date when employee was hired',
+  employment_status STRING COMMENT 'Current employment status (active, inactive, terminated)',
+  performance_period STRING COMMENT 'Performance measurement period (daily, weekly, monthly, quarterly)',
+  period_start_date DATE COMMENT 'Start date of the performance period',
+  period_end_date DATE COMMENT 'End date of the performance period',
+  total_sales_amount DOUBLE COMMENT 'Total sales revenue generated by employee during period',
+  total_transactions INT COMMENT 'Number of transactions completed',
+  average_transaction_value DOUBLE COMMENT 'Average value per transaction',
+  sales_target DOUBLE COMMENT 'Sales target for the period',
+  sales_achievement_percentage DOUBLE COMMENT 'Percentage of sales target achieved',
+  upsell_cross_sell_revenue DOUBLE COMMENT 'Additional revenue from upselling and cross-selling',
+  total_tasks_assigned INT COMMENT 'Total number of tasks assigned during period',
+  total_tasks_completed INT COMMENT 'Number of tasks completed successfully',
+  task_completion_rate DOUBLE COMMENT 'Percentage of tasks completed on time',
+  average_task_completion_time_minutes INT COMMENT 'Average time to complete tasks',
+  overdue_tasks INT COMMENT 'Number of tasks completed past due date',
+  high_priority_tasks_completed INT COMMENT 'Number of high/critical priority tasks completed',
+  average_quality_score DOUBLE COMMENT 'Average quality rating for completed tasks (1.0-5.0)',
+  customer_satisfaction_score DOUBLE COMMENT 'Average customer satisfaction rating (1.0-5.0)',
+  customer_complaints INT COMMENT 'Number of customer complaints received',
+  customer_compliments INT COMMENT 'Number of customer compliments received',
+  mystery_shopper_score DOUBLE COMMENT 'Mystery shopper evaluation score (1.0-5.0)',
+  scheduled_hours DOUBLE COMMENT 'Total hours scheduled to work',
+  actual_hours_worked DOUBLE COMMENT 'Actual hours worked',
+  attendance_rate DOUBLE COMMENT 'Percentage of scheduled shifts attended',
+  punctuality_score DOUBLE COMMENT 'On-time arrival rate (1.0-5.0)',
+  sick_days_taken INT COMMENT 'Number of sick days taken during period',
+  vacation_days_taken INT COMMENT 'Number of vacation days taken during period',
+  training_hours_completed DOUBLE COMMENT 'Hours of training completed during period',
+  certifications_earned INT COMMENT 'Number of new certifications earned',
+  training_completion_rate DOUBLE COMMENT 'Percentage of required training completed',
+  skill_assessment_score DOUBLE COMMENT 'Latest skill assessment score (1.0-5.0)',
+  peer_review_score DOUBLE COMMENT 'Average peer review rating (1.0-5.0)',
+  mentoring_hours DOUBLE COMMENT 'Hours spent mentoring other employees',
+  team_projects_participated INT COMMENT 'Number of team projects participated in',
+  leadership_activities INT COMMENT 'Number of leadership activities undertaken',
+  bopis_orders_processed INT COMMENT 'Number of BOPIS orders processed',
+  bopis_processing_time_minutes INT COMMENT 'Average time to process BOPIS orders',
+  personal_shopping_sessions INT COMMENT 'Number of personal shopping sessions conducted',
+  product_knowledge_score DOUBLE COMMENT 'Product knowledge assessment score (1.0-5.0)',
+  employee_of_month_awards INT COMMENT 'Number of employee of the month awards',
+  performance_bonuses_earned DOUBLE COMMENT 'Total performance bonuses earned',
+  recognition_points INT COMMENT 'Points earned in employee recognition program',
+  peer_nominations INT COMMENT 'Number of peer nominations received',
+  overall_performance_score DOUBLE COMMENT 'Calculated overall performance score (1.0-5.0)',
+  performance_ranking_in_department INT COMMENT 'Ranking within department (1 = top performer)',
+  performance_ranking_in_store INT COMMENT 'Ranking within store (1 = top performer)',
+  performance_trend STRING COMMENT 'Performance trend (improving, stable, declining)',
+  goals_set INT COMMENT 'Number of performance goals set for period',
+  goals_achieved INT COMMENT 'Number of performance goals achieved',
+  development_plan_progress DOUBLE COMMENT 'Progress on individual development plan (percentage)',
+  next_promotion_readiness DOUBLE COMMENT 'Readiness for next promotion level (1.0-5.0)',
+  last_performance_review_date DATE COMMENT 'Date of last formal performance review',
+  next_performance_review_date DATE COMMENT 'Date of next scheduled performance review',
+  created_at TIMESTAMP COMMENT 'Timestamp when record was created',
+  updated_at TIMESTAMP COMMENT 'Timestamp when record was last updated',
+  created_by STRING COMMENT 'System or user who created the record',
+  updated_by STRING COMMENT 'System or user who last updated the record')
+USING delta
+COMMENT 'Employee performance tracking table for identifying top performers by department and supporting performance analytics'
+TBLPROPERTIES (
+  'delta.autoOptimize.autoCompact' = 'true',
+  'delta.autoOptimize.optimizeWrite' = 'true',
+  'delta.enableChangeDataFeed' = 'true',
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.changeDataFeed' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE TABLE retail_consumer_goods.store_ops.employee_tasks (
+  task_id STRING COMMENT 'Unique identifier for each task (UUID or sequential ID)',
+  employee_id STRING COMMENT 'Employee ID who is assigned to complete the task',
+  store_id STRING COMMENT 'Store location where the task should be performed',
+  task_title STRING COMMENT 'Brief descriptive title of the task',
+  task_description STRING COMMENT 'Detailed description of what needs to be accomplished',
+  task_type STRING COMMENT 'Type of task: BOPIS, Service, Restock, Cleaning, Training, Administrative, Customer_Service, Inventory',
+  task_category STRING COMMENT 'Category grouping: Operations, Customer_Service, Inventory_Management, Maintenance, Administrative',
+  priority_level STRING COMMENT 'Task priority: Low, Medium, High, Critical, Urgent',
+  task_status STRING COMMENT 'Current status: Pending, In_Progress, Completed, Cancelled, On_Hold, Overdue',
+  assigned_date DATE COMMENT 'Date when the task was assigned',
+  due_date DATE COMMENT 'Target completion date for the task',
+  due_time TIMESTAMP COMMENT 'Specific time when task should be completed',
+  estimated_duration_minutes INT COMMENT 'Estimated time to complete the task in minutes',
+  actual_duration_minutes INT COMMENT 'Actual time taken to complete the task in minutes',
+  assigned_by STRING COMMENT 'Employee ID of the person who assigned the task',
+  assigned_to STRING COMMENT 'Employee ID of the person responsible for completing the task',
+  department STRING COMMENT 'Department where the task should be performed (e.g., Electronics, Grocery)',
+  location_details STRING COMMENT 'Specific location within store (e.g., Floor 2, Electronics Section, Aisle 5)',
+  customer_id STRING COMMENT 'Customer ID for customer-related tasks',
+  customer_name STRING COMMENT 'Customer name for easy identification',
+  order_id STRING COMMENT 'Internal order identifier for order-related tasks',
+  order_number STRING COMMENT 'Customer-facing order number for reference',
+  product_sku STRING COMMENT 'Product SKU for inventory and restock tasks',
+  product_name STRING COMMENT 'Product name for easy identification',
+  quantity_required INT COMMENT 'Quantity of items needed for restock or inventory tasks',
+  started_at TIMESTAMP COMMENT 'Timestamp when employee started working on the task',
+  completed_at TIMESTAMP COMMENT 'Timestamp when the task was marked as completed',
+  notes STRING COMMENT 'Notes added during task execution for progress tracking',
+  completion_notes STRING COMMENT 'Final notes added when task is completed',
+  is_recurring BOOLEAN COMMENT 'Whether this task repeats on a schedule (true/false)',
+  recurrence_pattern STRING COMMENT 'Recurrence frequency: Daily, Weekly, Monthly, Custom',
+  parent_task_id STRING COMMENT 'Reference to parent task if this is a recurring instance',
+  quality_score DOUBLE COMMENT 'Quality rating for completed task (1.00 to 5.00 scale)',
+  customer_satisfaction_score DOUBLE COMMENT 'Customer satisfaction rating if applicable (1.00 to 5.00 scale)',
+  requires_manager_approval BOOLEAN COMMENT 'Whether task completion requires manager approval (true/false)',
+  approved_by STRING COMMENT 'Manager employee ID who approved the task completion',
+  approved_at TIMESTAMP COMMENT 'Timestamp when manager approved the task completion',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP() COMMENT 'Timestamp when the task record was created',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP() COMMENT 'Timestamp when the task record was last modified',
+  created_by STRING COMMENT 'Employee ID of who created the task record',
+  updated_by STRING COMMENT 'Employee ID of who last updated the task record',
+  tags ARRAY<STRING> COMMENT 'Tags for categorization and filtering (e.g., urgent, seasonal, training)',
+  attachments STRING COMMENT 'File paths or URLs to related documents as JSON array',
+  dependencies STRING COMMENT 'Task IDs that must be completed before this task can start as JSON array',
+  requires_photo_proof BOOLEAN COMMENT 'Whether task completion requires photo documentation (true/false)',
+  photo_urls STRING COMMENT 'URLs to photos taken during or after task completion as JSON array',
+  gps_location STRING COMMENT 'GPS coordinates where the task was completed for verification',
+  device_id STRING COMMENT 'Mobile device identifier used to complete the task')
+USING delta
+TBLPROPERTIES (
+  'delta.autoOptimize.autoCompact' = 'true',
+  'delta.autoOptimize.optimizeWrite' = 'true',
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.allowColumnDefaults' = 'supported',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE TABLE retail_consumer_goods.store_ops.evaluation (
+  request_id STRING,
+  source_type STRING,
+  source_id STRING,
+  inputs STRUCT<messages: ARRAY<STRUCT<content: STRING, role: STRING>>>,
+  expectations STRUCT<expected_facts: ARRAY<STRING>, expected_retrieved_context: ARRAY<STRUCT<content: STRING, doc_uri: STRING>>>)
+USING delta
+TBLPROPERTIES (
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE TABLE retail_consumer_goods.store_ops.inventory (
+  inventory_id BIGINT COMMENT 'Unique identifier for each inventory record',
+  product_id BIGINT COMMENT 'Foreign key reference to the product table identifying the specific product',
+  store_id BIGINT COMMENT 'Unique identifier for the store',
+  store_name STRING COMMENT 'Name of the store',
+  store_address STRING COMMENT 'Physical address of the store',
+  store_city STRING COMMENT 'City where the store is located',
+  store_state STRING COMMENT 'State where the store is located',
+  store_zip_code STRING COMMENT 'ZIP code of the store location',
+  store_phone STRING COMMENT 'Contact phone number for the store',
+  store_email STRING COMMENT 'Contact email for the store',
+  store_type STRING COMMENT 'Type of store (flagship, outlet, express, popup)',
+  store_size_sqft INT COMMENT 'Size of the store in square feet',
+  store_rating DOUBLE COMMENT 'Store rating on a scale of 0-5',
+  store_hours STRING COMMENT 'Store operating hours by day in JSON format',
+  latitude DOUBLE COMMENT 'Store location latitude coordinate',
+  longitude DOUBLE COMMENT 'Store location longitude coordinate',
+  store STRING COMMENT 'Store identifier where inventory is located',
+  store_quantity INT COMMENT 'Current available quantity of product in the specified store',
+  warehouse STRING COMMENT 'Warehouse identifier where backup inventory is stored',
+  warehouse_quantity INT COMMENT 'Current available quantity of product in the specified warehouse',
+  retail_amount DOUBLE COMMENT 'Current retail price of the product',
+  popularity_rating STRING COMMENT 'Rating indicating how popular/frequently purchased the product is (e.g., high, medium, low)',
+  department STRING COMMENT 'Department within the store where the product is categorized',
+  aisle_location STRING COMMENT 'Physical aisle location identifier where the product can be found in store',
+  is_closeout BOOLEAN COMMENT 'Flag indicating whether the product is marked for closeout/clearance',
+  min_stock_level INT COMMENT 'Minimum stock level before reorder',
+  max_stock_level INT COMMENT 'Maximum stock level capacity',
+  last_restock_date TIMESTAMP COMMENT 'Date of last inventory restock',
+  last_count_date TIMESTAMP COMMENT 'Date of last physical inventory count',
+  is_out_of_stock BOOLEAN COMMENT 'Flag indicating if product is out of stock',
+  is_low_stock BOOLEAN COMMENT 'Flag indicating if product is below minimum stock level',
+  next_restock_date TIMESTAMP COMMENT 'Expected date of next inventory restock',
+  daily_demand_prediction INT COMMENT 'Predicted daily demand quantity',
+  weekly_demand_prediction INT COMMENT 'Predicted weekly demand quantity',
+  monthly_demand_prediction INT COMMENT 'Predicted monthly demand quantity',
+  last_7_days_sales INT COMMENT 'Total sales in the last 7 days',
+  last_30_days_sales INT COMMENT 'Total sales in the last 30 days',
+  last_90_days_sales INT COMMENT 'Total sales in the last 90 days',
+  days_until_stockout INT COMMENT 'Predicted days until stock depletion',
+  stockout_risk_level STRING COMMENT 'Risk level of stockout (low, medium, high, critical)',
+  is_seasonal BOOLEAN COMMENT 'Flag indicating if product has seasonal demand patterns',
+  season_peak_factor DOUBLE COMMENT 'Seasonal demand multiplier',
+  trend_direction STRING COMMENT 'Current sales trend (increasing, stable, decreasing)',
+  trend_strength DOUBLE COMMENT 'Strength of the current trend (0-1)',
+  last_prediction_update TIMESTAMP COMMENT 'Timestamp of last demand prediction update',
+  is_store_active BOOLEAN COMMENT 'Flag indicating if store is currently active',
+  store_created_at TIMESTAMP COMMENT 'Store creation timestamp',
+  store_last_updated TIMESTAMP COMMENT 'Last store update timestamp')
+USING delta
+COMMENT 'Enhanced inventory tracking table that maintains current product quantities across stores and warehouses, including detailed store information, location data, and advanced inventory analytics. Schema optimized for parquet compatibility.'
+TBLPROPERTIES (
+  'delta.autoOptimize.autoCompact' = 'true',
+  'delta.autoOptimize.optimizeWrite' = 'true',
+  'delta.enableChangeDataFeed' = 'true',
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.changeDataFeed' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE VIEW store_ops.manager_employee_lookup (
+  manager_id COMMENT 'Unique identifier for the manager (matches employee_id for managers)',
+  manager_name COMMENT 'Full name of the manager',
+  store_id COMMENT 'Store where the manager works',
+  store_name COMMENT 'Name of the store location',
+  manager_department COMMENT 'Primary department the manager oversees',
+  manager_title COMMENT 'Manager position title (e.g., Store Manager, Department Manager)',
+  email_address COMMENT 'Manager email address for task assignments and communication',
+  phone_number COMMENT 'Manager phone number',
+  slack_user_id COMMENT 'Slack user ID for direct messaging',
+  teams_user_id COMMENT 'Microsoft Teams user ID',
+  preferred_communication_method COMMENT 'Preferred method for task assignments (email, slack, teams, phone)',
+  time_zone COMMENT 'Manager time zone for scheduling',
+  work_schedule COMMENT 'Typical work schedule (e.g., Mon-Fri 9-5, Rotating shifts)',
+  max_daily_task_assignments COMMENT 'Maximum number of task assignments per day',
+  auto_approve_routine_tasks COMMENT 'Whether routine tasks can be auto-assigned',
+  requires_approval_for_high_priority COMMENT 'Whether high priority tasks need explicit approval',
+  employee_id COMMENT 'Unique identifier for the employee',
+  employee_name COMMENT 'Full name of the employee',
+  employee_department COMMENT 'Primary department where employee works (e.g., Electronics, Footwear, Customer Service)',
+  employee_title COMMENT 'Job title/position of the employee',
+  overall_performance_score COMMENT 'Calculated overall performance score (1.0-5.0)',
+  performance_ranking_in_department COMMENT 'Ranking within department (1 = top performer)')
+WITH SCHEMA COMPENSATION
+AS SELECT 
+    m.manager_id,
+    m.manager_name,
+    m.store_id,
+    m.store_name,
+    m.department as manager_department,
+    m.position_title as manager_title,
+    m.email_address,
+    m.phone_number,
+    m.slack_user_id,
+    m.teams_user_id,
+    m.preferred_communication_method,
+    m.time_zone,
+    m.work_schedule,
+    m.max_daily_task_assignments,
+    m.auto_approve_routine_tasks,
+    m.requires_approval_for_high_priority,
+    -- Employee information
+    e.employee_id,
+    e.employee_name,
+    e.department as employee_department,
+    e.position_title as employee_title,
+    e.overall_performance_score,
+    e.performance_ranking_in_department
+FROM managers m
+JOIN employee_performance e ON m.manager_id = e.manager_id
+WHERE e.performance_period = 'monthly' 
+    AND e.period_start_date = DATE_TRUNC('month', CURRENT_DATE())
+    AND e.employment_status = 'active'
+    AND m.employment_status = 'active'
+
+CREATE VIEW store_ops.manager_task_overview (
+  store_id COMMENT 'Store location where the task should be performed',
+  assigned_date COMMENT 'Date when the task was assigned',
+  department COMMENT 'Department where the task should be performed (e.g., Electronics, Grocery)',
+  task_type COMMENT 'Type of task: BOPIS, Service, Restock, Cleaning, Training, Administrative, Customer_Service, Inventory',
+  priority_level COMMENT 'Task priority: Low, Medium, High, Critical, Urgent',
+  task_count,
+  completed_count,
+  overdue_count,
+  high_priority_count,
+  avg_duration_minutes)
+WITH SCHEMA COMPENSATION
+AS SELECT 
+    store_id,
+    assigned_date,
+    department,
+    task_type,
+    priority_level,
+    COUNT(*) AS task_count,
+    COUNT(CASE WHEN task_status = 'Completed' THEN 1 END) AS completed_count,
+    COUNT(CASE WHEN task_status IN ('Pending', 'In_Progress') AND due_time < CURRENT_TIMESTAMP() THEN 1 END) AS overdue_count,
+    COUNT(CASE WHEN priority_level IN ('Critical', 'Urgent') THEN 1 END) AS high_priority_count,
+    AVG(CASE WHEN actual_duration_minutes IS NOT NULL THEN actual_duration_minutes END) AS avg_duration_minutes
+FROM employee_tasks
+WHERE assigned_date >= DATE_SUB(CURRENT_DATE(), 7)
+GROUP BY store_id, assigned_date, department, task_type, priority_level
+ORDER BY assigned_date DESC, overdue_count DESC, high_priority_count DESC
+
+CREATE TABLE retail_consumer_goods.store_ops.managers (
+  manager_id STRING COMMENT 'Unique identifier for the manager (matches employee_id for managers)',
+  manager_name STRING COMMENT 'Full name of the manager',
+  store_id STRING COMMENT 'Store where the manager works',
+  store_name STRING COMMENT 'Name of the store location',
+  department STRING COMMENT 'Primary department the manager oversees',
+  position_title STRING COMMENT 'Manager position title (e.g., Store Manager, Department Manager)',
+  email_address STRING COMMENT 'Manager email address for task assignments and communication',
+  phone_number STRING COMMENT 'Manager phone number',
+  slack_user_id STRING COMMENT 'Slack user ID for direct messaging',
+  teams_user_id STRING COMMENT 'Microsoft Teams user ID',
+  reports_to STRING COMMENT 'Manager ID of who this manager reports to',
+  hire_date DATE COMMENT 'Date when manager was hired',
+  management_start_date DATE COMMENT 'Date when manager started in management role',
+  employment_status STRING COMMENT 'Current employment status (active, inactive, terminated)',
+  preferred_communication_method STRING COMMENT 'Preferred method for task assignments (email, slack, teams, phone)',
+  time_zone STRING COMMENT 'Manager time zone for scheduling',
+  work_schedule STRING COMMENT 'Typical work schedule (e.g., Mon-Fri 9-5, Rotating shifts)',
+  emergency_contact_only BOOLEAN COMMENT 'Whether to only contact for emergency tasks',
+  max_daily_task_assignments INT COMMENT 'Maximum number of task assignments per day',
+  auto_approve_routine_tasks BOOLEAN COMMENT 'Whether routine tasks can be auto-assigned',
+  requires_approval_for_high_priority BOOLEAN COMMENT 'Whether high priority tasks need explicit approval',
+  created_at TIMESTAMP COMMENT 'Timestamp when record was created',
+  updated_at TIMESTAMP COMMENT 'Timestamp when record was last updated',
+  created_by STRING COMMENT 'System or user who created the record',
+  updated_by STRING COMMENT 'System or user who last updated the record')
+USING delta
+COMMENT 'Manager information table for task assignment and communication workflows'
+TBLPROPERTIES (
+  'delta.autoOptimize.autoCompact' = 'true',
+  'delta.autoOptimize.optimizeWrite' = 'true',
+  'delta.enableChangeDataFeed' = 'true',
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.changeDataFeed' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE TABLE retail_consumer_goods.store_ops.product_performance (
+  product_id BIGINT,
+  sku STRING,
+  product_name STRING,
+  brand STRING,
+  category STRING,
+  subcategory STRING,
+  price DECIMAL(10,2),
+  units_sold_6m INT,
+  units_sold_3m INT,
+  units_sold_1m INT,
+  return_rate DECIMAL(5,2),
+  avg_rating DECIMAL(3,2),
+  review_count INT,
+  store_id INT,
+  seasonal_trend STRING,
+  inventory_turnover DECIMAL(5,2),
+  profit_margin DECIMAL(5,2))
+USING delta
+TBLPROPERTIES (
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE TABLE retail_consumer_goods.store_ops.products (
+  product_id BIGINT COMMENT 'Unique identifier for each product in the catalog',
+  sku STRING COMMENT 'Stock Keeping Unit - unique internal product identifier code',
+  upc STRING COMMENT 'Universal Product Code - standardized barcode number for product identification',
+  brand_name STRING COMMENT 'Name of the manufacturer or brand that produces the product',
+  product_name STRING COMMENT 'Display name of the product as shown to customers',
+  short_description STRING COMMENT 'Brief product description for quick reference',
+  long_description STRING COMMENT 'Detailed text description of the product including key features and attributes',
+  product_url STRING COMMENT 'URL to the product page on the e-commerce site',
+  image_url STRING COMMENT 'URL to the primary product image',
+  merchandise_class STRING COMMENT 'Broad category classification of the product (e.g., Electronics, Apparel, Grocery)',
+  class_cd STRING COMMENT 'Alphanumeric code representing the specific product subcategory',
+  department_id STRING COMMENT 'Department identifier for store organization',
+  department_name STRING COMMENT 'Name of the department where product is typically located',
+  category_id STRING COMMENT 'Category identifier within department',
+  category_name STRING COMMENT 'Name of the product category',
+  subcategory_id STRING COMMENT 'Subcategory identifier within category',
+  subcategory_name STRING COMMENT 'Name of the product subcategory',
+  base_price DOUBLE COMMENT 'Standard retail price before any discounts',
+  msrp DOUBLE COMMENT 'MSRP (Manufacturer Suggested Retail Price)',
+  weight DOUBLE COMMENT 'Product weight',
+  weight_unit STRING COMMENT 'Unit of measurement for weight (e.g., kg, lb)',
+  dimensions STRING COMMENT 'Product dimensions in JSON format (length, width, height)',
+  color STRING COMMENT 'Primary color of the product',
+  size STRING COMMENT 'Size specification if applicable',
+  material STRING COMMENT 'Primary material(s) used in the product',
+  attributes STRING COMMENT 'Additional product attributes in JSON format',
+  min_order_quantity INT COMMENT 'Minimum quantity for ordering from supplier',
+  max_order_quantity INT COMMENT 'Maximum quantity for ordering from supplier',
+  reorder_point INT COMMENT 'Quantity threshold for triggering reorder',
+  lead_time_days INT COMMENT 'Average lead time for restocking in days',
+  safety_stock_level INT COMMENT 'Recommended safety stock quantity',
+  economic_order_quantity INT COMMENT 'Optimal order quantity for cost efficiency',
+  primary_supplier_id STRING COMMENT 'ID of the primary supplier',
+  primary_supplier_name STRING COMMENT 'Name of the primary supplier',
+  supplier_part_number STRING COMMENT 'Supplier part number for the product',
+  alternative_suppliers STRING COMMENT 'List of alternative suppliers in JSON format',
+  product_status STRING COMMENT 'Current product status (active, discontinued, pending)',
+  launch_date DATE COMMENT 'Date when product was first introduced',
+  discontinue_date DATE COMMENT 'Date when product will be/was discontinued',
+  is_seasonal BOOLEAN COMMENT 'Whether the product is seasonal',
+  season_start DATE COMMENT 'Start date of the seasonal availability',
+  season_end DATE COMMENT 'End date of the seasonal availability',
+  is_returnable BOOLEAN COMMENT 'Whether the product can be returned',
+  return_policy STRING COMMENT 'Specific return policy for the product',
+  is_featured BOOLEAN COMMENT 'Whether the product is featured in promotions',
+  promotion_eligibility BOOLEAN COMMENT 'Whether the product can be promoted',
+  tags STRING COMMENT 'Search and classification tags as JSON array',
+  keywords STRING COMMENT 'Search keywords as JSON array',
+  merchandising_priority INT COMMENT 'Priority for merchandising displays (1-5)',
+  recommended_display_location STRING COMMENT 'Recommended location for store display',
+  hazmat_flag BOOLEAN COMMENT 'Whether product is considered hazardous material',
+  regulatory_flags STRING COMMENT 'Regulatory compliance flags in JSON format',
+  age_restriction INT COMMENT 'Minimum age requirement for purchase if applicable',
+  certification_requirements STRING COMMENT 'Required certifications in JSON format',
+  created_at TIMESTAMP COMMENT 'Record creation timestamp',
+  updated_at TIMESTAMP COMMENT 'Record last update timestamp',
+  created_by STRING COMMENT 'User who created the record',
+  updated_by STRING COMMENT 'User who last updated the record')
+USING delta
+COMMENT 'Enhanced master product catalog containing comprehensive product information, including detailed attributes, inventory parameters, supplier data, and merchandising details. Schema optimized for parquet compatibility.'
+TBLPROPERTIES (
+  'delta.autoOptimize.autoCompact' = 'true',
+  'delta.autoOptimize.optimizeWrite' = 'true',
+  'delta.enableChangeDataFeed' = 'true',
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.changeDataFeed' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE TABLE retail_consumer_goods.store_ops.sales_interactions (
+  interaction_id BIGINT,
+  customer_id STRING,
+  associate_id STRING,
+  product_discussed STRING,
+  brand STRING,
+  customer_objection STRING,
+  objection_category STRING,
+  resolution_strategy STRING,
+  outcome STRING,
+  interaction_date TIMESTAMP,
+  store_id INT,
+  duration_minutes INT,
+  follow_up_needed BOOLEAN)
+USING delta
+TBLPROPERTIES (
+  'delta.enableDeletionVectors' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.minReaderVersion' = '3',
+  'delta.minWriterVersion' = '7')
+
+CREATE VIEW store_ops.task_performance_metrics (
+  employee_id COMMENT 'Employee ID of the person responsible for completing the task',
+  store_id COMMENT 'Store location where the task should be performed',
+  assigned_date COMMENT 'Date when the task was assigned',
+  total_tasks,
+  completed_tasks,
+  pending_tasks,
+  in_progress_tasks,
+  overdue_tasks,
+  avg_quality_score,
+  avg_customer_satisfaction,
+  avg_completion_time_minutes,
+  completion_percentage)
+WITH SCHEMA COMPENSATION
+AS SELECT 
+    assigned_to AS employee_id,
+    store_id,
+    assigned_date,
+    COUNT(*) AS total_tasks,
+    COUNT(CASE WHEN task_status = 'Completed' THEN 1 END) AS completed_tasks,
+    COUNT(CASE WHEN task_status = 'Pending' THEN 1 END) AS pending_tasks,
+    COUNT(CASE WHEN task_status = 'In_Progress' THEN 1 END) AS in_progress_tasks,
+    COUNT(CASE WHEN task_status = 'Overdue' THEN 1 END) AS overdue_tasks,
+    AVG(CASE WHEN quality_score IS NOT NULL THEN quality_score END) AS avg_quality_score,
+    AVG(CASE WHEN customer_satisfaction_score IS NOT NULL THEN customer_satisfaction_score END) AS avg_customer_satisfaction,
+    AVG(CASE WHEN actual_duration_minutes IS NOT NULL THEN actual_duration_minutes END) AS avg_completion_time_minutes,
+    ROUND(
+        COUNT(CASE WHEN task_status = 'Completed' THEN 1 END) * 100.0 / COUNT(*), 
+        2
+    ) AS completion_percentage
+FROM employee_tasks
+GROUP BY assigned_to, store_id, assigned_date
+
+CREATE VIEW store_ops.top_customer_service_performers (
+  department COMMENT 'Primary department where employee works (e.g., Electronics, Footwear, Customer Service)',
+  store_name COMMENT 'Name of the store location',
+  employee_id COMMENT 'Unique identifier for the employee',
+  employee_name COMMENT 'Full name of the employee',
+  position_title COMMENT 'Job title/position of the employee',
+  customer_satisfaction_score COMMENT 'Average customer satisfaction rating (1.0-5.0)',
+  mystery_shopper_score COMMENT 'Mystery shopper evaluation score (1.0-5.0)',
+  customer_compliments COMMENT 'Number of customer compliments received',
+  customer_complaints COMMENT 'Number of customer complaints received',
+  bopis_orders_processed COMMENT 'Number of BOPIS orders processed',
+  personal_shopping_sessions COMMENT 'Number of personal shopping sessions conducted',
+  service_rank)
+WITH SCHEMA COMPENSATION
+AS SELECT 
+    department,
+    store_name,
+    employee_id,
+    employee_name,
+    position_title,
+    customer_satisfaction_score,
+    mystery_shopper_score,
+    customer_compliments,
+    customer_complaints,
+    bopis_orders_processed,
+    personal_shopping_sessions,
+    ROW_NUMBER() OVER (PARTITION BY department ORDER BY customer_satisfaction_score DESC) as service_rank
+FROM employee_performance
+WHERE performance_period = 'monthly' 
+    AND period_start_date = DATE_TRUNC('month', CURRENT_DATE())
+    AND employment_status = 'active'
+ORDER BY department, customer_satisfaction_score DESC
+
+CREATE VIEW store_ops.top_employees_by_department (
+  department COMMENT 'Primary department where employee works (e.g., Electronics, Footwear, Customer Service)',
+  store_name COMMENT 'Name of the store location',
+  employee_id COMMENT 'Unique identifier for the employee',
+  employee_name COMMENT 'Full name of the employee',
+  position_title COMMENT 'Job title/position of the employee',
+  overall_performance_score COMMENT 'Calculated overall performance score (1.0-5.0)',
+  performance_ranking_in_department COMMENT 'Ranking within department (1 = top performer)',
+  total_sales_amount COMMENT 'Total sales revenue generated by employee during period',
+  sales_achievement_percentage COMMENT 'Percentage of sales target achieved',
+  task_completion_rate COMMENT 'Percentage of tasks completed on time',
+  customer_satisfaction_score COMMENT 'Average customer satisfaction rating (1.0-5.0)',
+  attendance_rate COMMENT 'Percentage of scheduled shifts attended',
+  dept_rank)
+WITH SCHEMA COMPENSATION
+AS SELECT 
+    department,
+    store_name,
+    employee_id,
+    employee_name,
+    position_title,
+    overall_performance_score,
+    performance_ranking_in_department,
+    total_sales_amount,
+    sales_achievement_percentage,
+    task_completion_rate,
+    customer_satisfaction_score,
+    attendance_rate,
+    ROW_NUMBER() OVER (PARTITION BY department ORDER BY overall_performance_score DESC) as dept_rank
+FROM employee_performance
+WHERE performance_period = 'monthly' 
+    AND period_start_date = DATE_TRUNC('month', CURRENT_DATE())
+    AND employment_status = 'active'
+ORDER BY department, overall_performance_score DESC
+
+CREATE VIEW store_ops.top_personal_shopping_associates_all_stores (
+  store_id COMMENT 'Store where the employee works',
+  store_name COMMENT 'Name of the store location',
+  employee_id COMMENT 'Unique identifier for the employee',
+  employee_name COMMENT 'Full name of the employee',
+  position_title COMMENT 'Job title/position of the employee',
+  personal_shopping_sessions COMMENT 'Number of personal shopping sessions conducted',
+  customer_satisfaction_score COMMENT 'Average customer satisfaction rating (1.0-5.0)',
+  product_knowledge_score COMMENT 'Product knowledge assessment score (1.0-5.0)',
+  overall_performance_score COMMENT 'Calculated overall performance score (1.0-5.0)',
+  comprehensive_score,
+  expertise_level,
+  overall_rank)
+WITH SCHEMA COMPENSATION
+AS SELECT 
+    store_id,
+    store_name,
+    employee_id,
+    employee_name,
+    position_title,
+    personal_shopping_sessions,
+    customer_satisfaction_score,
+    product_knowledge_score,
+    overall_performance_score,
+    -- Calculate comprehensive personal shopping score
+    ROUND(
+        (personal_shopping_sessions * 0.35 + 
+         customer_satisfaction_score * 0.25 + 
+         product_knowledge_score * 0.25 + 
+         overall_performance_score * 0.15) * 20, 2
+    ) as comprehensive_score,
+    CASE 
+        WHEN personal_shopping_sessions >= 15 AND customer_satisfaction_score >= 4.7 THEN 'Expert'
+        WHEN personal_shopping_sessions >= 10 AND customer_satisfaction_score >= 4.5 THEN 'Advanced'
+        WHEN personal_shopping_sessions >= 5 AND customer_satisfaction_score >= 4.3 THEN 'Intermediate'
+        ELSE 'Beginner'
+    END as expertise_level,
+    ROW_NUMBER() OVER (ORDER BY 
+        personal_shopping_sessions DESC, 
+        customer_satisfaction_score DESC, 
+        product_knowledge_score DESC
+    ) as overall_rank
+FROM employee_performance
+WHERE department = 'Womens Fashion'
+    AND performance_period = 'monthly' 
+    AND period_start_date = DATE_TRUNC('month', CURRENT_DATE())
+    AND employment_status = 'active'
+ORDER BY personal_shopping_sessions DESC, customer_satisfaction_score DESC
+
+CREATE VIEW store_ops.top_sales_performers_by_department (
+  department COMMENT 'Primary department where employee works (e.g., Electronics, Footwear, Customer Service)',
+  store_name COMMENT 'Name of the store location',
+  employee_id COMMENT 'Unique identifier for the employee',
+  employee_name COMMENT 'Full name of the employee',
+  position_title COMMENT 'Job title/position of the employee',
+  total_sales_amount COMMENT 'Total sales revenue generated by employee during period',
+  sales_achievement_percentage COMMENT 'Percentage of sales target achieved',
+  average_transaction_value COMMENT 'Average value per transaction',
+  total_transactions COMMENT 'Number of transactions completed',
+  upsell_cross_sell_revenue COMMENT 'Additional revenue from upselling and cross-selling',
+  sales_rank)
+WITH SCHEMA COMPENSATION
+AS SELECT 
+    department,
+    store_name,
+    employee_id,
+    employee_name,
+    position_title,
+    total_sales_amount,
+    sales_achievement_percentage,
+    average_transaction_value,
+    total_transactions,
+    upsell_cross_sell_revenue,
+    ROW_NUMBER() OVER (PARTITION BY department ORDER BY sales_achievement_percentage DESC) as sales_rank
+FROM employee_performance
+WHERE performance_period = 'monthly' 
+    AND period_start_date = DATE_TRUNC('month', CURRENT_DATE())
+    AND employment_status = 'active'
+    AND total_sales_amount > 0
+ORDER BY department, sales_achievement_percentage DESC
+
+CREATE VIEW store_ops.top_task_performers_by_department (
+  department COMMENT 'Primary department where employee works (e.g., Electronics, Footwear, Customer Service)',
+  store_name COMMENT 'Name of the store location',
+  employee_id COMMENT 'Unique identifier for the employee',
+  employee_name COMMENT 'Full name of the employee',
+  position_title COMMENT 'Job title/position of the employee',
+  task_completion_rate COMMENT 'Percentage of tasks completed on time',
+  total_tasks_completed COMMENT 'Number of tasks completed successfully',
+  average_quality_score COMMENT 'Average quality rating for completed tasks (1.0-5.0)',
+  high_priority_tasks_completed COMMENT 'Number of high/critical priority tasks completed',
+  average_task_completion_time_minutes COMMENT 'Average time to complete tasks',
+  task_rank)
+WITH SCHEMA COMPENSATION
+AS SELECT 
+    department,
+    store_name,
+    employee_id,
+    employee_name,
+    position_title,
+    task_completion_rate,
+    total_tasks_completed,
+    average_quality_score,
+    high_priority_tasks_completed,
+    average_task_completion_time_minutes,
+    ROW_NUMBER() OVER (PARTITION BY department ORDER BY task_completion_rate DESC, average_quality_score DESC) as task_rank
+FROM employee_performance
+WHERE performance_period = 'monthly' 
+    AND period_start_date = DATE_TRUNC('month', CURRENT_DATE())
+    AND employment_status = 'active'
+ORDER BY department, task_completion_rate DESC, average_quality_score DESC
+
+CREATE TABLE retail_consumer_goods.store_ops.trace_logs_148623835419263 (
+  trace_id STRING NOT NULL,
+  client_request_id STRING,
+  request_time TIMESTAMP,
+  state STRING,
+  execution_duration_ms BIGINT,
+  request STRING,
+  response STRING,
+  trace_metadata MAP<STRING, STRING>,
+  tags MAP<STRING, STRING>,
+  trace_location STRUCT<type: STRING, mlflow_experiment: STRUCT<experiment_id: STRING>, inference_table: STRUCT<full_table_name: STRING>>,
+  assessments ARRAY<STRUCT<assessment_id: STRING, trace_id: STRING, name: STRING, source: STRUCT<source_id: STRING, source_type: STRING>, create_time: TIMESTAMP, last_update_time: TIMESTAMP, expectation: STRUCT<value: STRING>, feedback: STRUCT<value: STRING, error: STRUCT<error_code: STRING, error_message: STRING>>, rationale: STRING, metadata: MAP<STRING, STRING>, span_id: STRING>>,
+  spans ARRAY<STRUCT<name: STRING, span_id: STRING, trace_id: STRING, parent_id: STRING, start_time: TIMESTAMP, end_time: TIMESTAMP, status_code: STRING, status_message: STRING, attributes: MAP<STRING, STRING>, events: ARRAY<STRUCT<name: STRING, timestamp: TIMESTAMP, attributes: MAP<STRING, STRING>>>>>)
+USING delta
+CLUSTER BY (request_time,trace_id)
+TBLPROPERTIES (
+  'delta.checkpointPolicy' = 'v2',
+  'delta.enableDeletionVectors' = 'true',
+  'delta.enableRowTracking' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.feature.rowTracking' = 'supported',
+  'delta.feature.v2Checkpoint' = 'supported',
+  'latest_request_time_ms' = '1750385075367',
+  'table_schema_version' = '1')
+
+CREATE TABLE retail_consumer_goods.store_ops.trace_logs_2804724654023655 (
+  trace_id STRING NOT NULL,
+  client_request_id STRING,
+  request_time TIMESTAMP,
+  state STRING,
+  execution_duration_ms BIGINT,
+  request STRING,
+  response STRING,
+  trace_metadata MAP<STRING, STRING>,
+  tags MAP<STRING, STRING>,
+  trace_location STRUCT<type: STRING, mlflow_experiment: STRUCT<experiment_id: STRING>, inference_table: STRUCT<full_table_name: STRING>>,
+  assessments ARRAY<STRUCT<assessment_id: STRING, trace_id: STRING, name: STRING, source: STRUCT<source_id: STRING, source_type: STRING>, create_time: TIMESTAMP, last_update_time: TIMESTAMP, expectation: STRUCT<value: STRING>, feedback: STRUCT<value: STRING, error: STRUCT<error_code: STRING, error_message: STRING>>, rationale: STRING, metadata: MAP<STRING, STRING>, span_id: STRING>>,
+  spans ARRAY<STRUCT<name: STRING, span_id: STRING, trace_id: STRING, parent_id: STRING, start_time: TIMESTAMP, end_time: TIMESTAMP, status_code: STRING, status_message: STRING, attributes: MAP<STRING, STRING>, events: ARRAY<STRUCT<name: STRING, timestamp: TIMESTAMP, attributes: MAP<STRING, STRING>>>>>,
+  request_preview STRING,
+  response_preview STRING)
+USING delta
+CLUSTER BY (request_time,trace_id)
+TBLPROPERTIES (
+  'delta.checkpointPolicy' = 'v2',
+  'delta.enableDeletionVectors' = 'true',
+  'delta.enableRowTracking' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.feature.rowTracking' = 'supported',
+  'delta.feature.v2Checkpoint' = 'supported',
+  'table_schema_version' = '1')
+
+CREATE TABLE retail_consumer_goods.store_ops.trace_logs_3369811628430366 (
+  trace_id STRING NOT NULL,
+  client_request_id STRING,
+  request_time TIMESTAMP,
+  state STRING,
+  execution_duration_ms BIGINT,
+  request STRING,
+  response STRING,
+  trace_metadata MAP<STRING, STRING>,
+  tags MAP<STRING, STRING>,
+  trace_location STRUCT<type: STRING, mlflow_experiment: STRUCT<experiment_id: STRING>, inference_table: STRUCT<full_table_name: STRING>>,
+  assessments ARRAY<STRUCT<assessment_id: STRING, trace_id: STRING, name: STRING, source: STRUCT<source_id: STRING, source_type: STRING>, create_time: TIMESTAMP, last_update_time: TIMESTAMP, expectation: STRUCT<value: STRING>, feedback: STRUCT<value: STRING, error: STRUCT<error_code: STRING, error_message: STRING>>, rationale: STRING, metadata: MAP<STRING, STRING>, span_id: STRING>>,
+  spans ARRAY<STRUCT<name: STRING, span_id: STRING, trace_id: STRING, parent_id: STRING, start_time: TIMESTAMP, end_time: TIMESTAMP, status_code: STRING, status_message: STRING, attributes: MAP<STRING, STRING>, events: ARRAY<STRUCT<name: STRING, timestamp: TIMESTAMP, attributes: MAP<STRING, STRING>>>>>)
+USING delta
+CLUSTER BY (request_time,trace_id)
+TBLPROPERTIES (
+  'delta.checkpointPolicy' = 'v2',
+  'delta.enableDeletionVectors' = 'true',
+  'delta.enableRowTracking' = 'true',
+  'delta.feature.appendOnly' = 'supported',
+  'delta.feature.deletionVectors' = 'supported',
+  'delta.feature.invariants' = 'supported',
+  'delta.feature.rowTracking' = 'supported',
+  'delta.feature.v2Checkpoint' = 'supported',
+  'table_schema_version' = '1')
+
+CREATE VIEW store_ops.upcoming_customer_appointments (
+  customer_id COMMENT 'Unique identifier for the customer',
+  customer_name COMMENT 'Full name of the customer',
+  preferred_name COMMENT 'Preferred name or nickname for personalized service',
+  customer_tier COMMENT 'Customer tier (Premium, Gold, Silver, Standard, etc.)',
+  preferred_store_id COMMENT 'Preferred store location for shopping',
+  store_name COMMENT 'Display name of the store location (e.g., Downtown, Uptown)',
+  preferred_stylist_id COMMENT 'Preferred personal stylist',
+  preferred_stylist_name COMMENT 'Full name of the employee',
+  next_appointment_date COMMENT 'Date and time of next scheduled appointment',
+  appointment_type COMMENT 'Type of upcoming appointment (personal styling, wardrobe consultation, etc.)',
+  appointment_purpose COMMENT 'Purpose or occasion for upcoming appointment',
+  style_preferences COMMENT 'Fashion style preferences and styling notes',
+  budget_range COMMENT 'Typical spending range per visit',
+  preparation_notes COMMENT 'Special preparation notes for upcoming visit',
+  special_occasions COMMENT 'Important dates (birthday, anniversary, etc.) in JSON format',
+  service_notes COMMENT 'Important service notes and preferences',
+  requires_manager_greeting COMMENT 'Whether manager should personally greet customer',
+  customer_alerts COMMENT 'Special alerts or flags for staff attention',
+  satisfaction_score COMMENT 'Average satisfaction score from feedback (1.0-5.0)',
+  total_lifetime_spend COMMENT 'Total amount spent as customer',
+  last_visit_date COMMENT 'Date of last store visit')
+WITH SCHEMA COMPENSATION
+AS SELECT 
+    c.customer_id,
+    c.customer_name,
+    c.preferred_name,
+    c.customer_tier,
+    c.preferred_store_id,
+    s.store_name,
+    c.preferred_stylist_id,
+    e.employee_name as preferred_stylist_name,
+    c.next_appointment_date,
+    c.appointment_type,
+    c.appointment_purpose,
+    c.style_preferences,
+    c.budget_range,
+    c.preparation_notes,
+    c.special_occasions,
+    c.service_notes,
+    c.requires_manager_greeting,
+    c.customer_alerts,
+    c.satisfaction_score,
+    c.total_lifetime_spend,
+    c.last_visit_date
+FROM customers c
+LEFT JOIN dim_stores s ON c.preferred_store_id = s.store_id
+LEFT JOIN employee_performance e ON c.preferred_stylist_id = e.employee_id
+WHERE c.next_appointment_date IS NOT NULL
+    AND c.next_appointment_date >= CURRENT_TIMESTAMP()
+    AND c.customer_status = 'active'
+ORDER BY c.next_appointment_date ASC
