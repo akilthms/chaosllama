@@ -16,7 +16,7 @@ spark = DatabricksSession.builder.profile(PROFILE).serverless(True).getOrCreate(
 
 CATALOG = config.CATALOG
 SCHEMA = config.SCHEMA
-QUALITY_THRESHOLD = config.QUALITY_THRESHOLD
+QUALITY_THRESHOLD = config.scorers.QUALITY_THRESHOLD
 
 # ================ ChaosLlama Unity Catalog Tables ====================
 @dataclass
@@ -103,8 +103,8 @@ class SuggestionUpdate:
 @dataclass
 class AgentSuggestion:
     content: str
-    update_suggestion: SuggestionUpdate
-    creation_tm: datetime = field(default_factory=datetime.utcnow)
+    type: Literal["system_instructions", "column_description", "data_model"]
+    creation_tm: datetime = field(default_factory=datetime.now)
 
 
 @dataclass
@@ -114,11 +114,11 @@ class AgentConfig:
     llm_parameters: dict = field(default_factory=lambda: {"temperature": 0.00})
 
 @dataclass
-class AgentInput_v3:
+class AgentInput:
+    quality_threshold: float
     data_intelligence: list = field(default_factory=list)
     overall_quality_score: list = field(default_factory=list)
     system_instructions_history: list = field(default_factory=list)
-    quality_threshold: float = QUALITY_THRESHOLD
     optimization_id: int = field(default_factory=int)
 
 
@@ -311,6 +311,9 @@ class IntrospectionManager:
 
     def get_curr_quality_score(self):
         return self.overall_quality_score[-1]
+
+    def get_current_feedback(self):
+        return self.feedback[-1] if self.feedback else None
 
     def get_prev_ai_prompt(self):
         try:

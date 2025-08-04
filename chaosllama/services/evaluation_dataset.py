@@ -3,10 +3,16 @@ from dotenv import dotenv_values
 from chaosllama.entities.models import EvalSetTable
 from databricks.connect import DatabricksSession
 from chaosllama.synthetic_data.synthesize import SyntheticDataGenerator
+import pyspark
+from pyspark.sql import functions as F
+import pandas as pd
+from rich.console import Console
+from rich.panel import Panel
 
 env = dotenv_values(".env")
 PROFILE = env["DATABRICKS_PROFILE"]
 spark = DatabricksSession.builder.profile(PROFILE).serverless(True).getOrCreate()
+console = Console()
 
 class EvalSetManager:
     def __init__(self, table_name:str=None,limit=None, consistency_factor= None, eval_set: Optional[EvalSetTable | str] = None):
@@ -15,8 +21,47 @@ class EvalSetManager:
         self.limit = limit
         self.consistency_factor = consistency_factor
 
+    def write_evalset(self) -> Self:
+        """ Write the evaluation set to the specified table in Unity Catalog. """
 
-    def create_evalset(self, mode: Literal["synthetic", "existing"] = "existing", **kwargs) -> Self:
+        if self.eval_set.data is not None:
+            if isinstance(self.eval_set.data, pd.DataFrame):
+                self.eval_set.data = spark.createDataFrame(self.eval_set.data)
+
+            try:
+                (self.eval_set.data
+                              .write
+                              .mode("overwrite")
+                              .option("mergeSchema", "true")
+                              .saveAsTable(self.table_name))
+                print(f"Evaluation set written to {self.table_name}")
+            except Exception as e:
+                print(f"Error writing evaluation set to {self.table_name}: {e}")
+
+        else:
+            raise ValueError("eval_set must be an instance of EvalSetTable")
+
+        return self
+
+
+    def simulate_system_instruction_update(self, ai_suggested_instruction: str) -> Self:
+        """ Simulate the update of the system instruction in the evaluation set. """
+        if not self.eval_set:
+            raise ValueError("EvalSet does not exist, please create it first.")
+
+        if isinstance(self.eval_set.data, pd.DataFrame):
+            self.eval_set.data["question"] = ai_suggested_instruction + "\n" + self.eval_set.data["question"]
+        else:
+            self.eval_set.data = (
+                self.eval_set.data.withColumn("question", F.concat(F.lit(ai_suggested_instruction),
+                                                                   F.lit("\n"),
+                                                                   F.col("question")))
+            )
+
+        return self
+
+
+    def get_evalset(self, mode: Literal["synthetic", "existing"] = "existing", **kwargs) -> Self:
         """ Create the evaluation set for the optimization run, based on the provided configuration. """
 
 
@@ -61,6 +106,7 @@ class EvalSetManager:
                     )
 
                     data = syn_gen.run()
+                    data["issues"] = None
                     self.eval_set = EvalSetTable(data=data)
 
 
@@ -75,10 +121,11 @@ class EvalSetManager:
         return self
 
     def prepare_evals(self, mode: Literal["synthetic", "existing"] = "existing", **kwargs) -> Self:
-        print("📐 Evaluation Dataset....")
+        console.print(Panel("📐Prepping Evaluation Dataset", expand=False, style="bold cyan"))
+
         if not self.eval_set:
             print("EvalSet does not exist, creating a new one")
-            self.create_evalset(mode=mode)
+            self.get_evalset(mode=mode)
 
         evaluation_dataset = (
             self.eval_set
@@ -88,4 +135,4 @@ class EvalSetManager:
 
         print("Created Evaluation Set")
         print(evaluation_dataset.data)
-        return evaluation_dataset
+        return self

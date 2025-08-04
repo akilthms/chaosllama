@@ -1,3 +1,14 @@
+import mlflow
+from typing import List, Dict, Optional, Union
+from abc import ABC
+from mlflow.entities import SpanType, Feedback
+from chaosllama.entities.models import AgentConfig, AgentInput, IntrospectionManager
+import pandas as pd
+from langchain.chat_models import ChatDatabricks
+import chaosllama.prompts.registry as cll_prompts
+import time
+from dataclasses import asdict
+
 
 
 @mlflow.trace
@@ -50,7 +61,7 @@ class IntrospectionAIAgent():
                     try:
                         res = func(*args, **kwargs)
                         return res
-                    except OutputParserException as e:
+                    except Exception as e:
                         print(
                             f"\t🧠❌ Introspection Attempt {attempt} failed with Exception: {e} attempting retry {max_retries - attempt} more times")
                         attempt += 1
@@ -67,9 +78,9 @@ class IntrospectionAIAgent():
 
         return decorator
 
-    @mlflow.trace(span_type=SpanType.Tool)
+    @mlflow.trace(span_type=SpanType.TOOL)
     @retry_introspection()
-    def introspect(self, inputs: AgentInput_v3, instrmg: IntrospectionManager = None):
+    def introspect(self, inputs: AgentInput, instrmg: IntrospectionManager = None):
         if not self.agent:
             self.create_agent()
 
@@ -78,7 +89,7 @@ class IntrospectionAIAgent():
         # TODO: Store metadata about introspection to DELTA tables
         return updated_metadata
 
-    @mlflow.trace(span_type=SpanType.Tool)
+    @mlflow.trace(span_type=SpanType.TOOL)
     def optimize(self, agent_input, mode="system_instructions"):
         match mode:
             case "system_instructions":

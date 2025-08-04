@@ -1,4 +1,6 @@
 from pathlib import Path
+import marko
+
 def extract_text(node):
     if hasattr(node, 'children'):
         return ''.join(extract_text(child) for child in node.children)

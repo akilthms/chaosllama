@@ -1,12 +1,15 @@
 from chaosllama.services import genie, mosaic, unity_catalog
+from typing import Tuple
 # from chaosllama.entities.models import AgentConfig, IntrospectionManager
 from chaosllama.services.introspection import IntrospectionAIAgent
 from dataclasses import dataclass
 import mlflow
 from mlflow.entities import SpanType
 from abc import ABC
+from chaosllama.profiles.config import config
+from pyspark.sql import functions as F
+from chaosllama.entities.models import AgentConfig, IntrospectionManager, AgentInput
 
-from chaosllama.entities.models import AgentConfig, IntrospectionManager
 
 @dataclass
 class ChaosLlamaServicesConfig:
@@ -83,98 +86,80 @@ class ChaosLlama():
         self.uc_manager = config.uc_manager
         self.agent_config = config.agent_config
 
-    @mlflow.trace(name="🦙ChaosLlama App", span_type=SpanType.CHAIN)
-    def run(self, epochs=1, is_test=True, limit=None, is_cached=True, run_baseline=False) -> IntrospectionManager:
-
-        ucmg = self.uc_manager
+    @mlflow.trace(name="🦙ChaosLlama App",span_type=SpanType.CHAIN)
+    def run(self,
+            epochs=1,
+            is_test=True,
+            limit=None,
+            is_cached=True,
+            run_baseline=False,
+            run_null_hypothesis=False) -> Tuple[IntrospectionManager, mlflow.entities.Run]:
+        """ The main entry point for running the ChaosLlama framework."""
         mlfmg = self.mlflow_manager
-        limit = limit if is_test else None
+        # primer = PrimerManager(mlflow_parent_run_id=BEST_MLFLOW_RUNS_MAP.get(PARENT_RUN_NAME))
+        # 🕵 Initialize Agent
+        intropsective_agent = IntrospectionAIAgent(self.agent_config)
 
         # 💰 Cache
         if is_cached: mlfmg.eval_set.data.cache().count()
-        questions = mlfmg.eval_set.get_questions()
 
-        with mlflow.start_run() as parent_run:
-            mlfmg.eval_set.data = mlfmg.eval_set.data.withColumn("original_question", F.col("question"))
-            if run_baseline:
-                # mlflow_eval_logger.info(f"🏃 Running CockpitGPT Baseline Test w/ Data Sampling")
-                mlfmg.create_baseline_experiment_run(run_name="1 - 🚀 CockpitGPT w/ Data Sampling Baseline Test",
-                                                     genie_space_id=CPGPT_GENIE_SPACE_ID_WITH_DATA_SAMPLING,
-                                                     parent_run_id=test_suite.info.run_id)
+        with mlflow.start_run(experiment_id=mlfmg.experiment_id) as parent_run:
+            mlfmg.eval_manager.eval_set.data = mlfmg.eval_manager.eval_set.data.withColumn("original_question", F.col("question"))
 
-            instrmg = IntrospectionManager()
-            # 🕵 Initialize Agent
-            agent = IntrospectionAIAgent(self.agent_config)
-            introspective_data = []
-            # Manages All IntrospectiveManagers
-            introspection_director = IntrospectionManager()
+            if run_baseline: mlfmg.create_experiment_run(parent_run_id=parent_run.run_id, mode="baseline")
+            if run_null_hypothesis: mlfmg.create_experiment_run(parent_run_id=parent_run.run_id, mode="null_hypothesis")
 
-            # Trigger Chaos LLama run from prexisting runs
             # [TODO]: create a function in Primer class called clone_runs
-            if IS_TRIGGERED_FROM_CHECKPOINT:
-                primer = PrimerManager(mlflow_parent_run_id=BEST_MLFLOW_RUNS_MAP.get(PARENT_RUN_NAME))
-                primer.run_introspection()
+            if config.runtime.IS_TRIGGERED_FROM_CHECKPOINT:
+                raise NotImplementedError("ChaosLlama run from checkpoint is not implemented yet.")
+                # primer.run_introspection() # Trigger Chaos LLama run from prexisting runs
 
+            introspective_data = []
+            introspection_director = IntrospectionManager() # Manages All IntrospectiveManagers
             for i in range(epochs):
-                with mlflow.start_run(
-                        run_name=f"🔄 Optimization Cycle - {i + 1}",
-                        nested=True,
-                        parent_run_id=parent_run.info.run_id) as optimization_run:
+                if introspection_director.metadata_suggestions:
+                    ai_system_instruction = introspection_director.metadata_suggestions[-1].ai_system_instruction
+                    mlfmg.eval_manager.simulate_system_instruction_update(ai_system_instruction)
 
-                    # print(introspection_director.metadata_suggestions)
+                print(f"{'=' * 10} 🖥️ Displaying 🔄 Cycle {i + 1} Eval Data {"=" * 10}")
+                introspection_director, exp_run = mlfmg.create_experiment_run(introspection_director,
+                                                                        parent_run_id=parent_run.info.run_id,
+                                                                        experiment_id=mlfmg.experiment_id,
+                                                                        mode="optimization",
+                                                                        optimization_id=i+1)
 
-                    if introspection_director.metadata_suggestions:
-                        # TODO: convert this logic from spark to pandas
-                        simulate_system_instruction_update = (
-                            F.concat(
-                                F.lit(introspection_director.metadata_suggestions[-1].ai_system_instruction),
-                                F.lit("\n"),
-                                F.col("original_question")
-                            )
-                        )
+                lookback = config.runtime.INTROSPECTION_LOOKBACK
+                reflection_data = AgentInput(
+                    quality_threshold=config.scorers.QUALITY_THRESHOLD,
+                    data_intelligence=introspection_director.feedback[-lookback:],
+                    overall_quality_score=introspection_director.overall_quality_score[-lookback:],
+                    system_instructions_history=introspection_director.metadata_suggestions[-lookback:],
+                    optimization_id=introspection_director.optimization_id
+                )
 
-                        mlfmg.eval_set.data = (
-                            mlfmg.eval_set
-                            .data
-                            .withColumn("question", simulate_system_instruction_update)
-                        )
+                # 🤖🎤 AI Suggestion as a result of introspection
+                ai_suggestion = intropsective_agent.introspect(reflection_data)
+                introspection_director.add_ai_suggestion(ai_suggestion)
 
-                    print(f"{'=' * 10} 🖥️ Displaying 🔄 Cycle {i + 1} Eval Data {"=" * 10}")
+                # 📝 MLFlow Logging of Optimization Loop tags
+                # with mlflow.start_run(experiment_id=parent_run.info.experiment_id, run_id=exp_run.info.run_id):
+                with mlflow.start_run(nested=True,
+                                      run_id=exp_run.info.run_id,
+                                      experiment_id=exp_run.info.experiment_id) as optimization_run:
 
-                    # Get Data Intelligence from evaluation run
-                    instrmg: IntrospectionManager = mlfmg.run_evaluations_v2(self.genie_manager.space_id)
-
-                    # Add data intelligence from all managers to director
-                    introspection_director.add_data_intelligence(instrmg.feedback)
-                    introspection_director.add_overall_quality_score(instrmg.overall_quality_score)
-                    introspection_director.optimization_id = i
-
-                    # TODO: Implement mlflow.validate_evaluation_results() for baseline testing
-
-                    reflection_data = AgentInput_v3(
-                        data_intelligence=introspection_director.data_intelligence[-INTROSPECTION_LOOKBACK:],
-                        overall_quality_score=introspection_director.overall_quality_score[-INTROSPECTION_LOOKBACK:],
-                        system_instructions_history=introspection_director.metadata_suggestions[
-                                                    -INTROSPECTION_LOOKBACK:],
-                        optimization_id=introspection_director.optimization_id
+                    mlflow.log_params(
+                        {
+                        "ai_system_instruction": ai_suggestion.ai_system_instruction,
+                        "introspection ai prompt": self.agent_config.system_prompt,
+                        "epochs": epochs,
+                        "introspection ai agent": config.runtime.INTROSPECT_AGENT_LLM_ENDPOINT,
+                        "max tokens": config.runtime.MAX_TOKENS
+                        }
                     )
 
-                    ai_suggestion = agent.introspect(reflection_data)
+                #
 
-                    instrmg.add_ai_suggestion(ai_suggestion)
-                    introspection_director.add_ai_suggestion(ai_suggestion)
-
-                    # 📝 MLFlow Logging
-                    mlflow.log_param("ai_system_instruction", ai_suggestion.ai_system_instruction)
-                    mlflow.log_param("introspection ai prompt", chaos_config.agent_config.system_prompt)
-                    mlflow.log_param("epochs", epochs)
-                    mlflow.log_param("introspection ai agent", INTROSPECT_AGENT_LLM_ENDPOINT)
-                    mlflow.log_param("max tokens", MAX_TOKENS)
-                    mlflow.log_metric("step", i)
-
-                    introspective_data.append(instrmg)
-
-                    # RUN VALIDATION SET ✅
+            # RUN VALIDATION SET ✅
             # mlfmg.run_validation_set()
 
-        return introspective_data, parent_run
+        return introspection_director, parent_run

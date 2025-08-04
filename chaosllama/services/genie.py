@@ -21,34 +21,19 @@ from databricks.connect import DatabricksSession
 from dotenv import dotenv_values
 from chaosllama.profiles.config import config
 from pyspark.sql.functions import col as F
+from time import sleep
+
 
 env = dotenv_values(".env")
 PROFILE = env["DATABRICKS_PROFILE"]
+HOST = env["DATABRICKS_HOST"]
 SMALL_LLM_ENDPOINTS = config.SMALL_LLM_ENDPOINTS
 spark = DatabricksSession.builder.profile(PROFILE).serverless(True).getOrCreate()
 EVAL_TABLE = f"{config.CATALOG}.{config.SCHEMA}.{config.EVAL_TABLE_NAME}"
 
+
+
 _w = WorkspaceClient()
-
-class GenieAgent():
-    """ Refactored Version of the Genie Manager into an Agent to fit into MLFlow 3.0 paradigm"""
-
-    def __init__(self, space_id:str, should_reply:bool = False):
-        self.space_id = space_id
-        self.conversation_id = None
-        self.message_id = None
-        self.client = self._w.genie
-        self.should_reply = should_reply
-        self.genie_mgr = GenieService(space_id=self.space_id,
-                                      should_reply=self.should_reply
-        )
-        self.token = self._w.tokens.create().token_value
-
-    @mlflow.trace(name="🧞‍♂️ Genie Agent")
-    def invoke(self, inputs):
-        question = inputs['question']
-        mlflow.update_current_trace(request_preview=f"{question}")
-        return self.genie_mgr.genie_workflow_v2(inputs).genie_query
 
 class GenieService():
     """ The purpose of this class is to manage the various interactions with the Genie Conversational API"""
@@ -58,14 +43,14 @@ class GenieService():
         self.space_id = space_id
         self.conversation_id = None
         self.message_id = None
-        self.client = self._w.genie
+        self.client = _w.genie
         self.should_reply = should_reply
-        self.token = self._w.tokens.create().token_value
+        self.token = _w.tokens.create().token_value
 
     @mlflow.trace(span_type=SpanType.TOOL)
     def poll_status(self, func_call: Callable,
                     timeout_seconds: int = 300,
-                    poll_interval: int = 30,
+                    poll_interval: int = 5,
                     **func_kwargs) -> dict:
         EXPECTED_STATUS = MessageStatus.COMPLETED
         start_time = time.time()
@@ -123,24 +108,15 @@ class GenieService():
 
     @mlflow.trace(span_type=SpanType.TOOL)
     def start_conversation_and_wait_v2(self, content: str = ""):
-        HOST = "https://adb-6209649103177418.18.azuredatabricks.net"
-        api = f"/api/2.0/genie/spaces/{self.space_id}/start-conversation"
-
+        api = f"api/2.0/genie/spaces/{self.space_id}/start-conversation"
         payload = dict(content=content)
-
         headers = dict(Authorization=f"Bearer {self.token}")
-
         response = requests.post(f"{HOST}/{api}", json=payload, headers=headers).json()
-        # print(f"🐜 Starting Conversation")
-        # print(response)
-        # print(f"User ID: {response["message"]["user_id"]}")
-        # print(f"Conversation ID {response["message"]["conversation_id"]}")
         return GenieMessage.from_dict(response['message'])
 
     @mlflow.trace
     @retry_message(max_retries=2, delay=10)
     def create_message_and_wait_v2(self, content: str, conversation_id: str = None) -> GenieMessage:
-        HOST = "https://adb-6209649103177418.18.azuredatabricks.net"
         api = f"api/2.0/genie/spaces/{self.space_id}/conversations/{conversation_id}/messages"
         payload = dict(content=content)
         headers = dict(Authorization=f"Bearer {self.token}")
@@ -158,7 +134,7 @@ class GenieService():
 
     @mlflow.trace(span_type=SpanType.TOOL)
     def get_message_v2(self, conversation_id="", message_id: str = ""):
-        HOST = "https://adb-6209649103177418.18.azuredatabricks.net"
+        # HOST
         api = f"/api/2.0/genie/spaces/{self.space_id}/conversations/{conversation_id}/messages/{message_id}"
 
         headers = dict(Authorization=f"Bearer {self.token}")
@@ -330,3 +306,23 @@ class GenieService():
             results = [future.result() for future in futures]
 
         return [item for sublist in results for item in sublist]  # 📦 unpack results
+
+
+
+class GenieAgent:
+    """ Refactored Version of the Genie Manager into an Agent to fit into MLFlow 3.0 paradigm"""
+
+    def __init__(self, space_id:str, should_reply:bool = True):
+        self.space_id = space_id
+        self._w = _w
+        self.client = self._w.genie
+        self.should_reply = should_reply
+        self.genie_mgr = GenieService(self.space_id, should_reply=True)
+        self.token = self._w.tokens.create().token_value
+
+    @mlflow.trace(name="🧞‍♂️ Genie Agent")
+    def invoke(self, inputs):
+        question = inputs['question']
+        # TODO: Uncomment and implement update_current_trace
+        #mlflow.update_current_trace(request_preview=f"{question}")
+        return self.genie_mgr.genie_workflow_v2(inputs).genie_query

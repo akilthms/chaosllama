@@ -8,7 +8,7 @@ from chaosllama.profiles.config import config
 from pprint import pprint
 from functools import reduce
 from dataclasses import asdict
-from chaosllama.utils.utilities import ask_ai
+from chaosllama.utils.utilities import ask_ai, ask_genie
 from langchain.prompts import PromptTemplate
 from pathlib import Path
 
@@ -157,8 +157,11 @@ class SyntheticDataGenerator:
                     # schema_ddl = open(Path("assets/ddls.txt")).read()
                     # response = ask_ai(dict(schema_ddl=schema_ddl, num_q=5), agent_config)
 
-                    return pd.read_csv(Path("assets/debug_evalset.csv"))  # Placeholder for actual AI generation logic
+                    return pd.read_csv(Path("assets/debug_evalset2.csv"))  # Placeholder for actual AI generation logic
 
+                case "genie":
+                    pass
+                    #ask_genie("What are the top 5 analytical questions that can be asked about the schema?")
 
         except Exception as e:
             print(f"Error generating synthetic data: {str(e)}")

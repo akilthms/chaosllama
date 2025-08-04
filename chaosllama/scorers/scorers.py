@@ -1,11 +1,24 @@
+from dotenv import dotenv_values
+from databricks import sql
+from collections import Counter
+import sqlparse
+from typing import Optional, Any
 from mlflow.genai.scorers import scorer
+from concurrent.futures import ThreadPoolExecutor
+from sqlparse.tokens import Keyword
+from mlflow.entities import Feedback
+import pandas as pd
 
+env = dotenv_values(".env")
+HOST = env["DATABRICKS_HOST"]
+WAREHOUSE_ID = dotenv_values(".env")["CHAOS_LLAMA_WAREHOUSE_ID"]
 
-def execute_query(query: str, warehouse_id: str = "c4c46f4adc63cd0f", server_hostname: str = HOST):
+def execute_query(query: str, warehouse_id: str = WAREHOUSE_ID, server_hostname: str = HOST):
     with sql.connect(
             server_hostname=server_hostname,
             http_path=f"/sql/1.0/warehouses/{warehouse_id}",
-            access_token=dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiToken().getOrElse(None)
+            access_token=env["DATABRICKS_TOKEN"],
+            _tls_no_verify=True
     ) as connection:
         with connection.cursor() as cursor:
             cursor.execute(query)
@@ -87,7 +100,8 @@ def eval_query_results(inputs: dict, outputs: dict, expectations: Optional[dict[
     # request = process_eval_request(inputs)
     outputs = process_eval_output(outputs)
     ground_truth_sql = process_eval_expectations(expectations)
-
+    print(f"ground_truth_sql: {ground_truth_sql}")
+    print(f"outputs: {outputs}")
     # queries_list = interleave_list([request], [outputs]) if isinstance(request,dict) or (isinstance(request,str)) else interleave_list(request, outputs)
 
     queries_list = interleave_list([ground_truth_sql], [outputs])
@@ -126,7 +140,7 @@ def eval_query_results(inputs: dict, outputs: dict, expectations: Optional[dict[
         "result_set": scores
     }
 
-    _value = (True if (results_are_equal[0] == "yes") else False)
+    _value = True if (results_are_equal[0] == "yes") else False
 
     return Feedback(
         name="sql_results_equivalence",
