@@ -61,7 +61,7 @@ def process_eval_expectations(expectations: Optional[dict[str, Any]]):
     return expectations["expected_response"]
 
 
-@scorer
+@scorer(name="sql_clauses_distribution_equivalence")
 def eval_sql_clauses_distro(inputs: dict, outputs: str, expectations: Optional[dict[str, Any]]):
     # ground_truth_sql = process_eval_request(inputs)
     outputs = process_eval_output(outputs)
@@ -100,8 +100,7 @@ def eval_query_results(inputs: dict, outputs: dict, expectations: Optional[dict[
     # request = process_eval_request(inputs)
     outputs = process_eval_output(outputs)
     ground_truth_sql = process_eval_expectations(expectations)
-    print(f"ground_truth_sql: {ground_truth_sql}")
-    print(f"outputs: {outputs}")
+
     # queries_list = interleave_list([request], [outputs]) if isinstance(request,dict) or (isinstance(request,str)) else interleave_list(request, outputs)
 
     queries_list = interleave_list([ground_truth_sql], [outputs])

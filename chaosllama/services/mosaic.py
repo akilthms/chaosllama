@@ -57,6 +57,7 @@ class MosaicEvalService():
         guidelines = [Guidelines(name=name, guidelines=g[0]) for name, g in global_guidelines.items()]
 
         scorers: list[Callable] = self.judge_manager.scorers
+        print("🥅",scorers)
         eval_dataset = self._prepare_inputs(self.eval_manager.eval_set)
 
         completed_assessment = mlflow.genai.evaluate(
