@@ -15,7 +15,7 @@ FROM
   filtered_data
 GROUP BY
   `employee_id`,
-  `employee_name`",
+  `employee_name`",Ensure it has a select statement
 Which store has the highest customer satisfaction score?,"WITH filtered_data AS (
   SELECT
     *
@@ -40,7 +40,7 @@ FROM
   grouped_data
 ORDER BY
   `avg_customer_satisfaction_score` DESC
-LIMIT 1",
+LIMIT 1",Ensure it has a select statement
 How many tasks were completed by employees in the Customer Service department last month?,"WITH filtered_data AS (
   SELECT
     *
@@ -56,7 +56,7 @@ SELECT
 FROM
   filtered_data
 WHERE
-  `task_status` = 'Completed'",
+  `task_status` = 'Completed'",Ensure it has a select statement
 What is the average transaction value for each store?,"WITH filtered_data AS (
   SELECT
     *
@@ -71,7 +71,7 @@ SELECT
 FROM
   filtered_data
 GROUP BY
-  `store_name`",
+  `store_name`",Ensure it has a select statement
 Who are the top 3 employees with the highest performance ranking in the Downtown Market store?,"WITH filtered_data AS (
   SELECT
     *
@@ -98,4 +98,4 @@ FROM
 WHERE
   rank <= 3
 ORDER BY
-  rank",
+  rank",Ensure it has a select statement

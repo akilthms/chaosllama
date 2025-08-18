@@ -4,7 +4,7 @@ from chaosllama.services import genie, mosaic, unity_catalog, judges
 from chaosllama.services.evaluation_dataset import EvalSetManager
 from chaosllama.profiles.config import config
 from chaosllama.services.tracking import MLFlowExperimentManager
-from chaosllama.scorers.scorers import eval_sql_clauses_distro, eval_query_results
+from chaosllama.scorers.scorers import eval_sql_clauses_distro, eval_query_results, eval_query_results_single_thread
 import chaosllama.prompts.registry as prompt_registry
 import pyfiglet
 import rich
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     exp_mngr = MLFlowExperimentManager(experiment_path=config.mlflow.MLFLOW_EXPERIMENT_PATH).get_or_create_mlflow_experiment(config.mlflow.MLFLOW_RUNTIME_EXPERIMENT)
 
     # 🧑‍🔧️Configure Services
-    jmngr = judges.JudgeService(scorers=[eval_sql_clauses_distro,eval_query_results]) #🧑‍⚖️Judges eval_query_results
+    jmngr = judges.JudgeService(scorers=[eval_sql_clauses_distro,eval_query_results_single_thread]) #🧑‍⚖️Judges eval_query_results
     mlfmngr = mosaic.MosaicEvalService(eval_manager=evmngr,judge_manager=jmngr, experiment_id=exp_mngr.experiment_id) # 🧪Mosaic Evaluations
     gmngr = genie.GenieService(space_id=config.genie.RUNTIME_GENIE_SPACE_ID) # 🧞‍♂️Genie Service
     ucmngr = unity_catalog.UCService(catalog=config.CATALOG, schema=config.SCHEMA) # 🤝 Unity Catalog Manager
@@ -61,5 +61,5 @@ if __name__ == "__main__":
         run_null_hypothesis=config.runtime.RUN_NULL_HYPOTHESIS,
     )
 
-    print("Done!")
+    print("👍Done!")
 

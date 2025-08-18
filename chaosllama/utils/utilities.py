@@ -8,6 +8,7 @@ from langchain.prompts import PromptTemplate
 from pathlib import Path
 import mlflow
 from chaosllama.services.genie import GenieService
+from chaosllama.profiles.config import config, RuntimeConfig
 
 def ask_ai(inputs:str | dict, agent_config:AgentConfig, context:str=None):
     # Update this to latest lanchain version
@@ -37,7 +38,22 @@ def ask_genie(question:str, space_id):
     return response
 
 
-
+def display_chaosllama_params(self, config: RuntimeConfig=config.runtime):
+        # TODO clean this up
+        banner = f"\n{'='*100}\n"
+        print(
+        f"""
+        {banner} 
+        🦙 Trigger Chaos LLama with parameters: 
+            {config.EPOCHS=} 
+            {config.LIMIT=}
+            {config.CONSISTENCY_FACTOR=}
+            {config.N_JOBS=}
+            {config.BATCH_SIZE=}
+            Genie Space Id: {self.genie_manager.space_id}
+        {banner}
+        """
+        )
 
 
 

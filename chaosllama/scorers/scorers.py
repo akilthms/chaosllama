@@ -90,6 +90,56 @@ def eval_sql_clauses_distro(inputs: dict, outputs: str, expectations: Optional[d
     )
 
 
+@scorer(name="sql_results_equivalence_single_thread")
+def eval_query_results_single_thread(inputs, outputs, expectations):
+    request = process_eval_request(inputs)
+    outputs = process_eval_output(outputs)
+    ground_truth_sql = process_eval_expectations(expectations)
+
+    queries_list = interleave_list([ground_truth_sql], [outputs])
+    
+    scores = [ execute_query(q) for q in [ground_truth_sql, outputs] ]
+    ground_truth_results = scores[0]
+    pred_results = scores[1]
+    results_are_equal = []
+
+    pred_df = pd.DataFrame(pred_results).sort_index(axis=0).sort_index(axis=1)
+    ground_truth_df = pd.DataFrame(ground_truth_results).sort_index(axis=0).sort_index(axis=1)
+    is_equal = pred_df.equals(ground_truth_df)
+    results_are_equal.append("yes" if is_equal else "no")
+
+    # Limit the count of rows in scores
+    RESULT_SET_LIMIT = 5
+    scores = [tuple([lst[:RESULT_SET_LIMIT] for lst in score_pair]) for score_pair in scores]
+
+    CORRECT_SQL_RATIONALE = f"The results sets produced by the predicted sql query and the ground truth sql query are equal given that the results sets are equivalent"
+    INCORRECT_SQL_RATIONALE = f"The results sets produced by the predicted sql query and the ground truth sql query are different: {scores}"
+
+    rationale_logic = (
+        CORRECT_SQL_RATIONALE if (results_are_equal[0] == "yes")
+        else INCORRECT_SQL_RATIONALE
+    )
+    _metadata = {
+        "row_count": {
+            "pred_df": pred_df.size,
+            "ground_truth_df": ground_truth_df.size
+        },
+        "result_set": scores
+    }
+
+    _value = True if (results_are_equal[0] == "yes") else False
+
+    return Feedback(
+        name="sql_results_equivalence_single_thread",
+        value=_value,
+        # metadata=_metadata,0
+        rationale=rationale_logic
+    )
+
+
+
+
+
 @scorer(name="sql_results_equivalence")
 def eval_query_results(inputs: dict, outputs: dict, expectations: Optional[dict[str, Any]]):
     """
@@ -97,7 +147,7 @@ def eval_query_results(inputs: dict, outputs: dict, expectations: Optional[dict[
     ground_truth_sql = process_eval_request(inputs)
     outputs = process_eval_output(outputs)
     """
-    # request = process_eval_request(inputs)
+    request = process_eval_request(inputs)
     outputs = process_eval_output(outputs)
     ground_truth_sql = process_eval_expectations(expectations)
 

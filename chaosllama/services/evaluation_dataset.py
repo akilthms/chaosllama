@@ -106,7 +106,7 @@ class EvalSetManager:
                     )
 
                     data = syn_gen.run()
-                    data["issues"] = None
+                    #data["issues"] = None
                     self.eval_set = EvalSetTable(data=data)
 
 

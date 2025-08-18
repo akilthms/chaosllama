@@ -136,6 +136,102 @@ class MosaicEvalService():
 
         return instrmg, experiment_run
 
+    def create_experiment_run_v2(
+            self,
+            introspection_director: IntrospectionManager=None,
+            parent_run_id=None,
+            experiment_id:str=None,
+            mode: Literal["null_hypothesis", "baseline", "validation", "optimization"] = None,
+            optimization_id:int=None
+    ) -> Tuple[IntrospectionManager, mlflow.entities.Run]:
+        """
+        The purpose of this function is to create an experiment run in MLFlow for the Mosaic Evaluation Service.
+        :param introspection_director:
+        :param parent_run_id:
+        :param mode:
+        :return:
+        """
+
+        match mode:
+            case "null_hypothesis":
+                genie_space_name = self._w.genie.get_space(config.genie.BASELINE_GENIE_SPACE_ID).title
+                genie_space_id = config.genie.BASELINE_GENIE_SPACE_ID
+                run_name = f"0 - 🫙 Null Hypothesis Test - {genie_space_name}"
+                experiment_type = "null_hypothesis_test"
+
+
+            case "baseline":
+                genie_space_name = self._w.genie.get_space(config.genie.BASELINE_GENIE_SPACE_ID).title
+                genie_space_id = config.genie.BASELINE_GENIE_SPACE_ID
+                run_name = f"0 - ⛺️ Baseline Test - {genie_space_name}"
+                experiment_type = "baseline_test"
+
+
+            case "validation":
+                genie_space_name = self._w.genie.get_space(config.genie.VALIDATION_GENIE_SPACE_ID).title
+                genie_space_id = config.genie.VALIDATION_GENIE_SPACE_ID
+                run_name = f"0 - ✅ Validation Test - {genie_space_name}"
+                experiment_type = "validation_test"
+
+            case "optimization":
+                genie_space_id = config.genie.RUNTIME_GENIE_SPACE_ID
+                run_name = f" 🔄 Optimization Cycle {optimization_id}"
+                experiment_type = "optimization"
+
+            case _:
+                raise ValueError("Invalid mode. Please choose 'null_hypothesis' or 'baseline'.")
+
+
+
+        with mlflow.start_run(run_name=run_name,
+                              nested=True,
+                              parent_run_id=parent_run_id,
+                              experiment_id=experiment_id) as experiment_run:
+            mlflow.set_tag(experiment_type, True)
+            instrmg = self.run_evaluations(genie_space_id)
+            mlflow.log_param("step", optimization_id)
+
+        return instrmg, experiment_run
+
+    def create_baseline_experiment_run(
+            self,
+            run_name,
+            genie_space_id,
+            parent_run_id=None
+    ) -> IntrospectionManager:
+
+        genie_space_name = self._w.genie.get_space(config.genie.BASELINE_GENIE_SPACE_ID).title
+        genie_space_id = config.genie.BASELINE_GENIE_SPACE_ID
+        run_name = f"0 - ⛺️ Baseline Test - {genie_space_name}"
+
+        with mlflow.start_run(run_name=run_name,
+                              experiment_id=self.experiment_id,
+                              nested=True,
+                              parent_run_id=parent_run_id) as baseline_run:
+            mlflow.set_tag("baseline_test", True)
+            return self.run_evaluations(genie_space_id=genie_space_id)
+
+
+    def create_null_hypothesis_experiment_run(
+            self,
+            run_name,
+            genie_space_id,
+            parent_run_id=None
+    ) -> IntrospectionManager:
+
+        genie_space_name = self._w.genie.get_space(config.genie.BASELINE_GENIE_SPACE_ID).title
+        genie_space_id = config.genie.BASELINE_GENIE_SPACE_ID
+        run_name = f"0 - 🫙 Null Hypothesis Test - {genie_space_name}"
+
+        with mlflow.start_run(run_name=run_name,
+                              experiment_id=self.experiment_id,
+                              nested=True,
+                              parent_run_id=parent_run_id) as baseline_run:
+            mlflow.set_tag("null_hypothesis_test", True)
+
+            return self.run_evaluations(genie_space_id=genie_space_id)
+
+
     def log_metadata(self, assessment:mlflow.models.EvaluationResult) -> None:
       """ Log all the metadata for the evaluation run """
       metadata = assessment.metrics

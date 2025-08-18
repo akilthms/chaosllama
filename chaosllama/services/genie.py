@@ -322,7 +322,6 @@ class GenieAgent:
 
     @mlflow.trace(name="🧞‍♂️ Genie Agent")
     def invoke(self, inputs):
-        question = inputs['question']
         # TODO: Uncomment and implement update_current_trace
         #mlflow.update_current_trace(request_preview=f"{question}")
         return self.genie_mgr.genie_workflow_v2(inputs).genie_query
