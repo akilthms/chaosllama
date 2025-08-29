@@ -26,7 +26,7 @@ if __name__ == "__main__":
     evmngr = EvalSetManager(table_name=f"{config.CATALOG}.{config.SCHEMA}.{config.EVAL_TABLE_NAME}",
                         limit=config.runtime.LIMIT,
                         consistency_factor=config.runtime.CONSISTENCY_FACTOR)
-    evmngr.prepare_evals(mode="synthetic")
+    evmngr.prepare_evals(mode="existing")
     evmngr.write_evalset()
 
     # 🧑‍🔬Set MLFLow Experiment

@@ -113,7 +113,7 @@ class EvalSetManager:
 
             except Exception as e:
                 print(f"Error loading table {self.table_name}: {e}")
-                raise ValueError(f"Table {self.table_name} does not exist or is not accessible.")
+                # raise ValueError(f"Table {self.table_name} does not exist or is not accessible.")
 
 
 

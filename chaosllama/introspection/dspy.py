@@ -5,6 +5,15 @@ TODO: Attempt other strategies for metadata update. Here are a few strategies:
 * Update prompt incrementally, one by one, per feedback of each quesiton in the evaluation dataset
 """
 
+import dspy
+from mlflow.entities import Feedback
+from typing import Dict
+import pandas as pd
+from abc import ABC
+from databricks_langchain import ChatDatabricks
+from chaosllama.entities.models import AgentConfig, AgentInput_v3, IntrospectionManager
+
+
 
 class IntrospectionWorkflow():
     def __init__(self, agent):
@@ -100,6 +109,23 @@ class IntrospectionAIAgent():
         pass
 
 
+
+
+# class MosaicEvaluationAgent():
+#     """ Implement Introspection AI with Mosaic Agent Evaluation Judge Interface """
+#     pass
+#
+#
+# agent_config = AgentConfig(
+#     system_prompt=cll_prompts.INSTROSPECT_PROMPT_V3,
+#     endpoint=INTROSPECT_AGENT_LLM_ENDPOINT,
+#     llm_parameters={
+#         "temperature": 0.0,
+#         "max_tokens": MAX_TOKENS,
+#         "optimization_strategy": "MIPROv2"
+#     }
+# )
+
 class DspyInstrospectionSignature(dspy.Signature):
     """Instrospect on a set of feedbacks returned from mosaic evaluation harness and suggest"""
     previous_introspections: list[list[Feedback]] = dspy.InputField(
@@ -129,7 +155,6 @@ class DspyIntrospectionAgent(InstrospectiveAI):
         super().__init__(**kwargs)
         self.agent_config = agent_config
         self._configure()
-        self.optimization_strategies = [dspy.MIPROv2, dspy.CORPO]
 
     def _configure(self) -> None:
         lm = dspy.LM(self.agent_config.endpoint)  # "databricks/databricks-claude-3-7-sonnet/"
@@ -138,7 +163,21 @@ class DspyIntrospectionAgent(InstrospectiveAI):
     def compute_composite_metric(self, data_intelligence):
         pass
 
-    def optimize(self, data_intelligence, test_size=.50):
+    def optimize(self,
+                 data_intelligence,
+                 mode: Literal["system_instructions", "column_descriptions", "data_model"] = "system_instructions"):
+
+        match mode:
+            case "system_instructions":
+                self.system_instruction_introspection(agent_input)
+            case "column_description":
+                pass
+            case "data_model":
+                pass
+            case _:
+                raise ValueError("Invalid mode")
+
+    def system_instruction_introspection(self, data_intelligence):
         num_questions = data_intelligence["num_questions"]  # Grab number of questions from feedback
 
         # Configure the Dspy optimization strategy
@@ -146,60 +185,86 @@ class DspyIntrospectionAgent(InstrospectiveAI):
         OptStrat = dspy.MIPROv2 if self.agent_config.optimization_strategy == "MIPROv2" else dspy.CORPO
         mlflow.log_param("optimization_strategy", OptStrat.__name__)
 
-        teleprompter = OptStrat(metric=dspy.evaluate.SemanticF1(decompositional=True),
-                                auto="medium",
-                                num_threads=num_questions)
+        teleprompter = OptStrat(metric=self.compute_composite_metric,
+                                trainset=trainset,
+                                val
+        auto = "medium",
+        num_threads = num_questions)
 
-        dspy_data = [dspy.Example(**asdict(di)).with_inputs('question') for di in data_intelligence]
-        trainset, valset = train_test_split(dspy_data, test_size=test_size, random_state=42)
+        trainset =
+        valset =
 
-        optimized_genie_space = teleprompter.compile(DspyInstropection(),
-                                                     trainset=trainset,
-                                                     valset=valset,
-                                                     max_bootstrapped_demos=2,
-                                                     max_labeled_demos=2)
-        return optimized_genie_space
+        optimized_rag = teleprompter.compile(DspyInstropection(),
+                                             trainset=trainset,
+                                             valset=valset
+        max_bootstrapped_demos = 2, max_labeled_demos = 2)
 
-    # # Import the optimizer
-    # # Initialize optimizer
-    # teleprompter = MIPROv2(
-    #     metric=gsm8k_metric,
-    #     auto="light", # Can choose between light, medium, and heavy optimization runs
-    # )
+        @staticmethod
+        def calc_quality_score(metrics: dict, weight_map):
+            num_metrics = len(metrics.keys())
+            summed_metrics = [v * weight_map[k] for k, v in metrics.items() if weight_map.get(k, None)]
+            quality_score = sum(summed_metrics) / num_metrics
 
-    # # Optimize program
-    # print(f"Optimizing program with MIPRO...")
-    # optimized_program = teleprompter.compile(
-    #     program.deepcopy(),
-    #     trainset=trainset,
-    #     max_bootstrapped_demos=3,
-    #     max_labeled_demos=4,
-    #     requires_permission_to_run=False,
-    # )
+            is_equal_to_1 = sum(weight_map.values()) == 1.0
+            assert is_equal_to_1, "The sum of the weights must be equal to 1.0"
+            return quality_score
 
-    # # Save optimize program for future use
-    # optimized_program.save(f"mipro_optimized")
+        @staticmethod
+        def calc_composite_metric(metrics: dict,
+                                  CHAOSLLAMA_METRICS_WEIGHT: float = .70,
+                                  CUSTOM_METRICS_WEIGHT: float = .30) -> float:
+            # TODO: Make this more robust, to adjust for developer supplied custom scorers / guidelines.
+            # Note: Chaos Llama out of the box metrics (sql_results_equivalence, sql_accuracy, correctness, sql_clauses_distribution_equivalence, relevance_to_query)
+            # should always be weighted more, but leave room for customization
 
-    # # Evaluate optimized program
-    # print(f"Evaluate optimized program...")
-    # evaluate(optimized_program, devset=devset[:])
+            _metrics = metrics.copy()
+            _metrics.pop("agent/latency_seconds/mean")
 
+            weighted_chaosllama_metrics_map = {
+                'sql_results_equivalence/mean': 0.3125,
+                'sql_accuracy/mean': 0.1875,
+                'correctness/mean': 0.25,
+                'sql_clauses_distribution_equivalence/mean': 0.125,
+                'relevance_to_query/mean': .0625,
+                'count_joins/mean': .0625
+            }
 
-class MosaicEvaluationAgent():
-    """ Implement Introspection AI with Mosaic Agent Evaluation Judge Interface """
-    pass
+            # TODO: Determine if HIGHER WEIGHTS for sql_result_set, sql_accuracy are more important
+            # weighted_chaosllama_metrics_map = {
+            # 'sql_results_equivalence/mean': 0.50,
+            # 'sql_accuracy/mean': 0.25 ,
+            # 'correctness/mean': .0625 ,
+            # 'sql_clauses_distribution_equivalence/mean':.0625,
+            # 'relevance_to_query/mean': .0625,
+            # 'count_joins/mean': .0625
+            # }
 
+            # Create Weighted Custom Metrics Map
+            metrics_list = _metrics.keys()
+            custom_metrics = [
+                m for m in metrics_list
+                if m not in list(weighted_chaosllama_metrics_map.keys())
+            ]
 
-agent_config = AgentConfig(
-    system_prompt=cll_prompts.INSTROSPECT_PROMPT_V3,
-    endpoint=INTROSPECT_AGENT_LLM_ENDPOINT,
-    llm_parameters={
-        "temperature": 0.0,
-        "max_tokens": MAX_TOKENS,
-        "optimization_strategy": "MIPROv2"
-    }
-)
+            num_custom_metrics = len(custom_metrics)
+            weighted_custom_metrics_map = {m: (1 / num_custom_metrics) for m in custom_metrics}
 
+            chaosllama_metrics_quality_score = CHAOSLLAMA_METRICS_WEIGHT * self.calc_quality_score(_metrics,
+                                                                                                   weighted_chaosllama_metrics_map)
+
+            custom_metrics_quality_score = CUSTOM_METRICS_WEIGHT * self.calc_quality_score(_metrics,
+                                                                                           weighted_custom_metrics_map)
+
+            composite_metric_val = chaosllama_metrics_quality_score + custom_metrics_quality_score
+
+            print(
+                f"composite_metric_val={composite_metric_val:.2f}",
+                f"chaosllama_metrics_quality_score={chaosllama_metrics_quality_score:.2f}",
+                f"custom_metrics_quality_score={custom_metrics_quality_score:.2f}",
+                sep="\n"
+            )
+
+            return composite_metric_val
 
 def test_dspy_introspection():
     dspy_agent = DspyIntrospectionAgent(agent_config=agent_config)
