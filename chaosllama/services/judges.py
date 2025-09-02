@@ -1,5 +1,15 @@
 from pathlib import Path
 import marko
+from chaosllama.profiles.config import config
+import importlib
+
+
+def load_function(module_name: str, func_name: str):
+    # Import the module by string
+    module = importlib.import_module(module_name)
+    # Retrieve the function from the module
+    func = getattr(module, func_name)
+    return func
 
 def extract_text(node):
     if hasattr(node, 'children'):
@@ -21,6 +31,17 @@ class JudgeService():
     def load_guidelines(self, path: Path = None) -> str:
         self.guidelines = open(self.guidelines_path if self.guidelines_path else path, "r").read()
         return self
+
+    def load_scorers_from_config(self):
+        """ Load custom scorers from the configuration file. """
+        MODULE = "chaosllama.scorers.scorers"
+        if not self.scorers:
+            self.scorers = []
+            for scorer in config.scorers.custom_scorers:
+                func = load_function(MODULE, scorer)
+                self.scorers.append(func)
+        return self
+
 
     def extract_text(self, node):
         if hasattr(node, 'children'):

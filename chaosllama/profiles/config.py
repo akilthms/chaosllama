@@ -15,6 +15,8 @@ class GenieConfig(BaseModel):
     BASELINE_GENIE_SPACE_ID: str
     VALIDATION_GENIE_SPACE_ID: str
 
+
+
 class RuntimeConfig(BaseModel):
     MAX_TOKENS: int
     LIMIT: int
@@ -39,6 +41,7 @@ class ScorerConfig(BaseModel):
     QUALITY_THRESHOLD: float
     METRICS_DEFINITION: str
     global_guidelines: dict
+    custom_scorers: list
 
 class Config(BaseModel):
     CATALOG: str

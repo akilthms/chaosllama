@@ -53,7 +53,12 @@ SMALL_LLM_ENDPOINTS_CHOICES:
   - databricks-llama-4-maverick
 
 # 🧑‍⚖️ Judges Configuration
+# Add your custom scrorer here by function name
 scorers:
+  custom_scorers:
+    - eval_query_results
+    - eval_sql_clauses_distro
+
   QUALITY_THRESHOLD: 0.90
   METRICS_DEFINITION: |
     SQL Accuracy: The response query does not match the expected query in terms of metrics, countries, and years.
@@ -70,9 +75,23 @@ scorers:
       financial_planning: ["For every generated query the following dimensions MUST BE PRESENT. Dimensions: [scenario, report_type, year]"]
 
     v2:
-      sql_accuracy: ["Ensure that response and the ground truth are semantically equivalent in ansi spark sql"]
-      count_joins: ["Count the number of joins are the same in both queries."]
-      has_select: ["Ensure that the expected response has a sql SELECT statement , ignoring case, in the ansi sql query"]
+      sql_semantic_equivalence: [ "Ensure candidate and ground truth are semantically equivalent (allow commutativity, aliasing, harmless syntactic variants)." ]
+      projection_correctness: [ "Selected columns/expressions match the question’s intent and meaning." ]
+      aggregation_grain: [ "GROUP BY keys produce the intended granularity (neither over- nor under-aggregated)." ]
+      filter_logic_accuracy: [ "Filters match intended attributes, operators, values, and boundary conditions." ]
+      time_logic_and_grain: [ "Correct time windows, inclusivity, buckets, and (if relevant) timezone assumptions." ]
+      numerical_precision_and_nulls: [ "Correct casts, rounding, divide-by-zero protection, and NULL handling." ]
+      join_count_consistency: [ "Join count is minimal/appropriate; extra joins do not alter results." ]
+      window_function_correctness: [ "Window PARTITION BY/ORDER BY match the intended metric semantics." ]
+      subquery_cte_clarity: [ "Subqueries/CTEs structure logic correctly without altering semantics." ]
+      dimension_table_selection: [ "Correct choice of dimension(s) for the business meaning." ]
+      measure_definition_conformity: [ "Measures conform to business definitions (e.g., revenue net of discounts)." ]
+      unnecessary_complexity: [ "Prefer simpler equivalent queries; avoid complexity that risks drift." ]
+
+    v3:
+        sql_semantic_equivalence: [ "Ensure candidate and ground truth are semantically equivalent (allow commutativity, aliasing, harmless syntactic variants)." ]
+
+
 
 mlflow:
   MLFLOW_RUNTIME_EXPERIMENT: "🦙Chaos Llama"

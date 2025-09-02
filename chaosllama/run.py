@@ -33,7 +33,8 @@ if __name__ == "__main__":
     exp_mngr = MLFlowExperimentManager(experiment_path=config.mlflow.MLFLOW_EXPERIMENT_PATH).get_or_create_mlflow_experiment(config.mlflow.MLFLOW_RUNTIME_EXPERIMENT)
 
     # 🧑‍🔧️Configure Services
-    jmngr = judges.JudgeService(scorers=[eval_sql_clauses_distro,eval_query_results]) #🧑‍⚖️Judges eval_query_results
+    # jmngr = judges.JudgeService(scorers=[eval_sql_clauses_distro,eval_query_results]) #🧑‍⚖️Judges eval_query_results
+    jmngr = judges.JudgeService().load_scorers_from_config()  # 🧑‍⚖️Judges eval_query_results
     mlfmngr = mosaic.MosaicEvalService(eval_manager=evmngr,judge_manager=jmngr, experiment_id=exp_mngr.experiment_id) # 🧪Mosaic Evaluations
     gmngr = genie.GenieService(space_id=config.genie.RUNTIME_GENIE_SPACE_ID) # 🧞‍♂️Genie Service
     ucmngr = unity_catalog.UCService(catalog=config.CATALOG, schema=config.SCHEMA) # 🤝 Unity Catalog Manager

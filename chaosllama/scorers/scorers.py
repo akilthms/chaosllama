@@ -8,10 +8,21 @@ from concurrent.futures import ThreadPoolExecutor
 from sqlparse.tokens import Keyword
 from mlflow.entities import Feedback
 import pandas as pd
+from databricks.connect import DatabricksSession
+
 
 env = dotenv_values(".env")
 HOST = env["DATABRICKS_HOST"]
+PROFILE = env["DATABRICKS_PROFILE"]
 WAREHOUSE_ID = dotenv_values(".env")["CHAOS_LLAMA_WAREHOUSE_ID"]
+spark = DatabricksSession.builder.profile(PROFILE).serverless(True).getOrCreate()
+
+
+
+def execute_query_spark(query: str):
+    df = spark.sql(query)
+    result = [tuple(row) for row in df.collect()]
+    return result
 
 def execute_query(query: str, warehouse_id: str = WAREHOUSE_ID, server_hostname: str = HOST):
     with sql.connect(
@@ -106,7 +117,7 @@ def eval_query_results(inputs: dict, outputs: dict, expectations: Optional[dict[
     queries_list = interleave_list([ground_truth_sql], [outputs])
 
     with ThreadPoolExecutor(max_workers=2) as executor:
-        futures = [executor.submit(execute_query, q) for q in queries_list]
+        futures = [executor.submit(execute_query_spark, q) for q in queries_list]
         scores = [future.result() for future in futures]
         scores = [tuple(scores[i:i + 2]) for i in range(0, len(scores), 2)]  # group the predictions and targets
 
@@ -125,25 +136,25 @@ def eval_query_results(inputs: dict, outputs: dict, expectations: Optional[dict[
         scores = [tuple([lst[:RESULT_SET_LIMIT] for lst in score_pair]) for score_pair in scores]
 
     CORRECT_SQL_RATIONALE = f"The results sets produced by the predicted sql query and the ground truth sql query are equal given that the results sets are equivalent"
-    INCORRECT_SQL_RATIONALE = f"The results sets produced by the predicted sql query and the ground truth sql query are different: {scores}"
+    INCORRECT_SQL_RATIONALE = f"""The results sets produced by the predicted sql query 
+                                  and the ground truth sql query are different: 
+                                  
+    Predicted Datafrmae:
+    {scores[0][0]}
+    
+    Ground Truth Dataframe:
+    {scores[0][1]}
+    """
 
     rationale_logic = (
         CORRECT_SQL_RATIONALE if (results_are_equal[0] == "yes")
         else INCORRECT_SQL_RATIONALE
     )
-    _metadata = {
-        "row_count": {
-            "pred_df": pred_df.size,
-            "ground_truth_df": ground_truth_df.size
-        },
-        "result_set": scores
-    }
 
     _value = True if (results_are_equal[0] == "yes") else False
 
     return Feedback(
         name="sql_results_equivalence",
         value=_value,
-        metadata=_metadata,
         rationale=rationale_logic
     )

@@ -6,12 +6,15 @@ TODO: Attempt other strategies for metadata update. Here are a few strategies:
 """
 
 import dspy
+from dspy.teleprompt import LabeledFewShot
 from mlflow.entities import Feedback
 from typing import Dict
 import pandas as pd
 from abc import ABC
 from databricks_langchain import ChatDatabricks
-from chaosllama.entities.models import AgentConfig, AgentInput_v3, IntrospectionManager
+from chaosllama.entities.models import AgentConfig, IntrospectionManager
+import mlflow
+from chaosllama.services.genie import GenieAgent
 
 
 
@@ -109,8 +112,6 @@ class IntrospectionAIAgent():
         pass
 
 
-
-
 # class MosaicEvaluationAgent():
 #     """ Implement Introspection AI with Mosaic Agent Evaluation Judge Interface """
 #     pass
@@ -140,12 +141,34 @@ class DspyInstrospectionSignature(dspy.Signature):
     rationale: str = dspy.OutputField(desc="rationale for the change to the system instructions")
 
 
-class DspyInstropection(dspy.Module):
-    def __init__(self):
-        self.introspect = dspy.ChainOfThought(DspyInstrospectionSignature)
+"""
+My DSPY Module takes as input a set of feedbacks and produces an optimized system prompt for genie. 
+The base llm used is databricks-claude-3-7-sonnet. Or what ever is configured in chaosllama runtime config.
 
-    def forward(self, data_intelligence: dict):
-        return self.introspect(**data_intelligence)
+DSPY MODULE prompt:
+ - Genie System Instructions Prompt
+
+There is a pass through of the prompt to the dspy module, to the genie system instructions. 
+
+
+"""
+
+
+
+
+class DspyInstropection(dspy.Module):
+    def __init__(self,genie_space_id: str):
+        # self.introspect = dspy.ChainOfThought(DspyInstrospectionSignature)
+        self.genie_space_id = genie_space_id
+        self.instrospect = dspy.Predict(DspyInstrospectionSignature)
+        self.genie_agent = GenieAgent(space_id=genie_space_id)
+
+    def forward(self, inputs:dict, data_intelligence: dict):
+
+        # initiate genie workflow
+
+        self.introspect(**data_intelligence)
+        return dspy.Prediction(genie_query=self.genie_agent.invoke(inputs))
 
 
 class DspyIntrospectionAgent(InstrospectiveAI):
@@ -178,23 +201,25 @@ class DspyIntrospectionAgent(InstrospectiveAI):
                 raise ValueError("Invalid mode")
 
     def system_instruction_introspection(self, data_intelligence):
-        num_questions = data_intelligence["num_questions"]  # Grab number of questions from feedback
+
+        num_questions = len(data_intelligence['requests'])  # Grab number of questions from feedback
+        train_set = data_intelligence['feedback']
+        val_set = None
 
         # Configure the Dspy optimization strategy
 
-        OptStrat = dspy.MIPROv2 if self.agent_config.optimization_strategy == "MIPROv2" else dspy.CORPO
+        OptStrat = dspy.MIPROv2 if self.agent_config.optimization_strategy == "MIPROv2" else dspy.COPRO
         mlflow.log_param("optimization_strategy", OptStrat.__name__)
 
         teleprompter = OptStrat(metric=self.compute_composite_metric,
-                                trainset=trainset,
-                                val
-        auto = "medium",
-        num_threads = num_questions)
+                                trainset=train_set,
+                                valset=val_set,
+                                auto = "medium",
+                                num_threads = num_questions)
 
-        trainset =
-        valset =
+        #dspy.ProgramOfThought(
 
-        optimized_rag = teleprompter.compile(DspyInstropection(),
+        optimized_instructions = teleprompter.compile(DspyInstropection(),
                                              trainset=trainset,
                                              valset=valset
         max_bootstrapped_demos = 2, max_labeled_demos = 2)
@@ -271,3 +296,5 @@ def test_dspy_introspection():
     results = dspy.optimize(data_intelligence, mode="system_instructions")
     print(results)
 
+if __name__ == "__main__":
+    test_dspy_introspection()
