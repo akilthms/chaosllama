@@ -103,6 +103,3 @@ class IntrospectionAIAgent():
         """ The purpose of this method is to log the agent to mlflow"""
         pass
 
-
-class DspyIntrospectionAgent():
-    pass

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, asdict
-from typing import Optional, Literal, Self
+from typing import Optional, Literal, Self, Dict, Any
 from dotenv import dotenv_values
 from databricks.connect import DatabricksSession
 import pyspark
@@ -132,6 +132,16 @@ class MosaicAssessment:
     root_cause_assessment: str = field(default_factory=str)
     root_cause_rationale: str = field(default_factory=str)
 
+@dataclass
+class MosaicJudgesInput:
+    inputs: Dict[str, Any]
+    outputs: Dict[str, Any]
+    expectations: Optional[dict[str, Any]]
+
+@dataclass
+class DspyFeedback:
+    score: float
+    feedback: str
 
 # @dataclass
 # class DataIntelligence:

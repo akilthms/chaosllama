@@ -87,7 +87,7 @@ scorers:
       dimension_table_selection: [ "Correct choice of dimension(s) for the business meaning." ]
       measure_definition_conformity: [ "Measures conform to business definitions (e.g., revenue net of discounts)." ]
       unnecessary_complexity: [ "Prefer simpler equivalent queries; avoid complexity that risks drift." ]
-
+      induced_follow_up_question: [ "Would the query’s logic/assumptions prompt a follow-up question for clarity?" ]
     v3:
         sql_semantic_equivalence: [ "Ensure candidate and ground truth are semantically equivalent (allow commutativity, aliasing, harmless syntactic variants)." ]
 

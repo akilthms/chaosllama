@@ -1,0 +1,2 @@
+question,ground_truth_sql,issues
+"Hey Assistant, can you check if we have Adidas Gazelle sneakers in black at our Downtown Market location?","WITH filtered_inventory AS (SELECT * FROM `retail_consumer_goods`.`store_ops`.`inventory` WHERE `store_name` = 'Downtown Market'), joined_data AS (SELECT * FROM filtered_inventory JOIN `retail_consumer_goods`.`store_ops`.`products` ON filtered_inventory.`product_id` = `products`.`product_id`) SELECT * FROM joined_data WHERE `product_name` = 'Gazelle Classic Sneakers' AND TRIM(LOWER(`color`)) = 'black'",
