@@ -6,10 +6,11 @@ import pyspark
 from pyspark.sql import functions as F
 from databricks.sdk import WorkspaceClient
 from deltalake import DeltaTable
+from chaosllama.utils.utilities import get_spark_session
 
 env = dotenv_values(".env")
 PROFILE = env["DATABRICKS_PROFILE"]
-spark = DatabricksSession.builder.profile(PROFILE).serverless(True).getOrCreate()
+spark = get_spark_session()
 
 @dataclass
 class UCService:

@@ -22,13 +22,14 @@ from dotenv import dotenv_values
 from chaosllama.profiles.config import config
 from pyspark.sql.functions import col as F
 from time import sleep
+from chaosllama.utils.utilities import get_spark_session
 
 
 env = dotenv_values(".env")
 PROFILE = env["DATABRICKS_PROFILE"]
 HOST = env["DATABRICKS_HOST"]
 SMALL_LLM_ENDPOINTS = config.SMALL_LLM_ENDPOINTS
-spark = DatabricksSession.builder.profile(PROFILE).serverless(True).getOrCreate()
+spark = get_spark_session()
 EVAL_TABLE = f"{config.CATALOG}.{config.SCHEMA}.{config.EVAL_TABLE_NAME}"
 
 
@@ -111,7 +112,9 @@ class GenieService():
         api = f"api/2.0/genie/spaces/{self.space_id}/start-conversation"
         payload = dict(content=content)
         headers = dict(Authorization=f"Bearer {self.token}")
+        print(f"{HOST=}")
         response = requests.post(f"{HOST}/{api}", json=payload, headers=headers).json()
+        print(response)
         return GenieMessage.from_dict(response['message'])
 
     @mlflow.trace

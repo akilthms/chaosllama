@@ -8,10 +8,10 @@ from pyspark.sql import functions as F
 import pandas as pd
 from rich.console import Console
 from rich.panel import Panel
-
+from chaosllama.utils.utilities import get_spark_session
 env = dotenv_values(".env")
 PROFILE = env["DATABRICKS_PROFILE"]
-spark = DatabricksSession.builder.profile(PROFILE).serverless(True).getOrCreate()
+spark = get_spark_session()
 console = Console()
 
 class EvalSetManager:
@@ -66,6 +66,7 @@ class EvalSetManager:
 
 
         if isinstance(self.eval_set, str) and self.eval_set.count("." ) == 2:
+            print("[Remove Later]: Eval Set as String")
             self.eval_set = spark.table(self.eval_set)
 
         elif isinstance(self.eval_set, str) and self.eval_set.count("." ) != 2:
@@ -74,6 +75,7 @@ class EvalSetManager:
         else:
             try:
                 if mode == "existing":
+                    print(f"Using existing eval dataset: {self.table_name}")
                     data = spark.table(self.table_name)
                     self.eval_set = EvalSetTable(data=data)
 
@@ -124,7 +126,8 @@ class EvalSetManager:
         console.print(Panel("📐Prepping Evaluation Dataset", expand=False, style="bold cyan"))
 
         if not self.eval_set:
-            print("EvalSet does not exist, creating a new one")
+            if mode == "existing":
+                print("Getting Evaluation Dataset!")
             self.get_evalset(mode=mode)
 
         evaluation_dataset = (
@@ -133,6 +136,9 @@ class EvalSetManager:
                 .replicate_rows(self.consistency_factor)
         )
 
-        print("Created Evaluation Set")
-        print(evaluation_dataset.data)
+        if isinstance(evaluation_dataset.data, pyspark.sql.dataframe.DataFrame):
+            display_eval_df = evaluation_dataset.data.toPandas()
+        else: 
+            display_eval_df = evaluation_dataset.data
+        print(display_eval_df)
         return self

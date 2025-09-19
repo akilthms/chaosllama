@@ -9,14 +9,14 @@ from sqlparse.tokens import Keyword
 from mlflow.entities import Feedback
 import pandas as pd
 from databricks.connect import DatabricksSession
+from chaosllama.utils.utilities import get_spark_session
 
 
 env = dotenv_values(".env")
 HOST = env["DATABRICKS_HOST"]
 PROFILE = env["DATABRICKS_PROFILE"]
-WAREHOUSE_ID = dotenv_values(".env")["CHAOS_LLAMA_WAREHOUSE_ID"]
-spark = DatabricksSession.builder.profile(PROFILE).serverless(True).getOrCreate()
-
+WAREHOUSE_ID = env["CHAOS_LLAMA_WAREHOUSE_ID"]
+spark = get_spark_session()
 
 
 def execute_query_spark(query: str):

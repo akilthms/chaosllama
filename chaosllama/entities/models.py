@@ -7,12 +7,14 @@ from chaosllama.profiles.config import config
 from pyspark.sql import functions as F
 from datetime import datetime
 from langchain.prompts import PromptTemplate
-from mlflow.entities import Feedback
 import pandas as pd
+from mlflow.entities import Feedback
+from databricks.connect import DatabricksSession
+from chaosllama.utils.utilities import get_spark_session
 
 env = dotenv_values(".env")
 PROFILE = env["DATABRICKS_PROFILE"]
-spark = DatabricksSession.builder.profile(PROFILE).serverless(True).getOrCreate()
+spark = get_spark_session()
 
 CATALOG = config.CATALOG
 SCHEMA = config.SCHEMA

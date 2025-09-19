@@ -1,4 +1,4 @@
-from chaosllama.entities.models import AgentConfig
+#from chaosllama.entities.models import AgentConfig
 from langchain.chains.llm import LLMChain
 from databricks_langchain import (
     ChatDatabricks,
@@ -7,9 +7,11 @@ from databricks_langchain import (
 from langchain.prompts import PromptTemplate
 from pathlib import Path
 import mlflow
-from chaosllama.services.genie import GenieService
+from databricks.connect import DatabricksSession
+from dotenv import dotenv_values
 
-def ask_ai(inputs:str | dict, agent_config:AgentConfig, context:str=None):
+
+def ask_ai(inputs:str | dict, agent_config, context:str=None):
     # Update this to latest lanchain version
     qa_chain = LLMChain(
         llm=ChatDatabricks(endpoint=agent_config.endpoint, **agent_config.llm_parameters),
@@ -21,6 +23,7 @@ def ask_ai(inputs:str | dict, agent_config:AgentConfig, context:str=None):
 
 
 def ask_genie(question:str, space_id):
+    from chaosllama.services.genie import GenieService
     """Ask Genie a question and get the response."""
 
     genie_manager = GenieService(space_id=space_id)
@@ -36,7 +39,17 @@ def ask_genie(question:str, space_id):
 
     return response
 
-
+def get_spark_session():
+    try:
+        from dotenv import dotenv_values
+        env = dotenv_values(".env")
+        PROFILE = env["DATABRICKS_PROFILE"]
+        spark = DatabricksSession.builder.profile(PROFILE).serverless(True).getOrCreate()
+        print(spark)
+    except Exception as e:
+        print(f"Error with serverless: {e}")
+        spark = DatabricksSession.builder.getOrCreate()
+    return spark
 
 
 
