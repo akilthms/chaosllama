@@ -112,9 +112,7 @@ class GenieService():
         api = f"api/2.0/genie/spaces/{self.space_id}/start-conversation"
         payload = dict(content=content)
         headers = dict(Authorization=f"Bearer {self.token}")
-        print(f"{HOST=}")
         response = requests.post(f"{HOST}/{api}", json=payload, headers=headers).json()
-        print(response)
         return GenieMessage.from_dict(response['message'])
 
     @mlflow.trace

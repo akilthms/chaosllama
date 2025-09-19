@@ -1,6 +1,6 @@
 # 🤝 Unity Catalog
-CATALOG: &CATALOG "uc_qa_cgf_mdip_01"
-SCHEMA: &SCHEMA "dbrx_gpt"
+CATALOG: &CATALOG 
+SCHEMA: &SCHEMA 
 CHAOS_ANALYTICS_TABLE_TEMPLATE: "${CATALOG}.${SCHEMA}.chaos_analytics"
 EVAL_TABLE_NAME: "eval_set"  # You can set this dynamically if needed
 CHAOS_LLAMA_PROFILE: "dev"
@@ -94,8 +94,8 @@ scorers:
 
 
 mlflow:
-  MLFLOW_RUNTIME_EXPERIMENT: "🦙ChaosLlama v2"
-  MLFLOW_EXPERIMENT_PATH: /Workspace/Users/akil.thomas.contractor@pepsico.com/
+  MLFLOW_RUNTIME_EXPERIMENT: "🦙ChaosLlama v3"
+  MLFLOW_EXPERIMENT_PATH: 
   BEST_MLFLOW_RUN: ""
   MLFLOW_EXPERIMENTS:
     - "🦙ChaosLlama v2"
