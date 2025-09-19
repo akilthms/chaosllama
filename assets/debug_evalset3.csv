@@ -1,2 +1,30 @@
 question,ground_truth_sql,issues
-"Hey Assistant, can you check if we have Adidas Gazelle sneakers in black at our Downtown Market location?","WITH filtered_inventory AS (SELECT * FROM `retail_consumer_goods`.`store_ops`.`inventory` WHERE `store_name` = 'Downtown Market'), joined_data AS (SELECT * FROM filtered_inventory JOIN `retail_consumer_goods`.`store_ops`.`products` ON filtered_inventory.`product_id` = `products`.`product_id`) SELECT * FROM joined_data WHERE `product_name` = 'Gazelle Classic Sneakers' AND TRIM(LOWER(`color`)) = 'black'",
+"Hey Assistant, can you check if we have Adidas Gazelle sneakers in black at our Downtown Market location?","SELECT i.*, p.* FROM `retail_consumer_goods`.`store_ops`.`inventory` i JOIN `retail_consumer_goods`.`store_ops`.`products` p ON i.`product_id` = p.`product_id` WHERE i.`store_name` = 'Downtown Market' AND p.`product_name` = 'Gazelle Classic Sneakers' AND p.`color` = 'black' AND p.`product_status` = 'active'",
+"Assistant, can you recommend similar sneakers to the black Gazelles that we have in stock?","WITH black_gazelle AS (
+  SELECT `product_id`
+  FROM `retail_consumer_goods`.`store_ops`.`products`
+  WHERE `product_name` ILIKE '%Gazelle%' AND `color` ILIKE '%black%'
+  LIMIT 1
+),
+similar_sneakers AS (
+  SELECT p.`product_id`, p.`product_name`, p.`color`
+  FROM `retail_consumer_goods`.`store_ops`.`products` p
+  WHERE p.`merchandise_class` = 'Footwear' AND p.`department_name` = 'Footwear' AND p.`product_id` != (SELECT `product_id` FROM black_gazelle)
+    AND p.`product_name` ILIKE '%sneaker%'
+),
+in_stock_sneakers AS (
+  SELECT p.`product_name`, p.`color`, i.`store_quantity`
+  FROM `retail_consumer_goods`.`store_ops`.`products` p
+  JOIN `retail_consumer_goods`.`store_ops`.`inventory` i ON p.`product_id` = i.`product_id`
+  WHERE p.`product_id` IN (SELECT `product_id` FROM similar_sneakers) AND i.`store_quantity` > 0
+)
+SELECT *
+FROM in_stock_sneakers;",
+"Assistant, can you check which nearby stores have black Gazelles in stock?","WITH filtered_products AS (SELECT `product_id` FROM `retail_consumer_goods`.`store_ops`.`products` WHERE `product_name` ILIKE '%Gazelle%' AND `color` ILIKE '%black%'), nearby_stores AS (SELECT `store_id`, `store_name`, `product_id` FROM `retail_consumer_goods`.`store_ops`.`inventory` WHERE `store_quantity` > 0) SELECT ns.`store_name` FROM nearby_stores ns JOIN filtered_products fp ON ns.`product_id` = fp.`product_id`",
+"Assistant, can you place a hold on black Gazelles, size 10, at Marina Market for this customer?",,
+"Assistant, please send directions to Marina Market and set up restock notifications for black Gazelles.",,
+Show me everything I need to know about Victoria Chen.,SELECT * FROM `retail_consumer_goods`.`store_ops`.`customers` WHERE LOWER(`customer_name`) LIKE LOWER('%Victoria%') OR LOWER(`preferred_name`) LIKE LOWER('%Victoria%'),
+Victoria likes the navy blazer but wants something more modern. Suggestions?,,
+Show me everything I need to know about Victoria Chen.,SELECT * FROM `retail_consumer_goods`.`store_ops`.`customers` WHERE `customer_name` LIKE '%Victoria%' OR `preferred_name` LIKE '%Victoria%',
+I have a styling appointment with Victoria Sterling today. Help me prepare.,"SELECT `customer_name`, `appointment_type`, `appointment_date`, `appointment_time`, `duration_minutes`, `stylist_name`, `status`, `notes` FROM `retail_consumer_goods`.`store_ops`.`appointments` WHERE `customer_name` = 'Victoria Sterling' AND `appointment_date` = CURRENT_DATE",
+Generate a notification for Victoria Sterling's upcoming styling appointment.,"SELECT `customer_name`, `appointment_date`, `appointment_time`, `appointment_type` FROM `retail_consumer_goods`.`store_ops`.`appointments` WHERE `customer_name` = 'Victoria Sterling' AND `appointment_date` > CURRENT_DATE",

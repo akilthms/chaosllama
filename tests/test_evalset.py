@@ -68,5 +68,5 @@ def test_hardware_store_evalset(yaml_path, limit=1):
 
 
 if __name__ == "__main__":
-    yaml_path = "/assets/examples.yaml"
-    print(test_hardware_store_evalset(yaml_path, limit=1))
+    yaml_path = "assets/examples.yaml"
+    print(test_hardware_store_evalset(yaml_path, limit=10))

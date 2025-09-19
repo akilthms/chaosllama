@@ -77,6 +77,9 @@ class EvalSetManager:
                     data = spark.table(self.table_name)
                     self.eval_set = EvalSetTable(data=data)
 
+                if mode == "local":
+                    self.eval_set = EvalSetTable(data=pd.read_csv("assets/debug_evalset3.csv"))
+
                 if mode == "synthetic":
                     print("Creating Synthetic Evaluation Set")
                     syn_gen = SyntheticDataGenerator(

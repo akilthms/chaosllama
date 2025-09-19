@@ -8,8 +8,8 @@ CHAOS_LLAMA_PROFILE: "dev"
 
 # 🏃 Runtime Configuration
 runtime:
-  MAX_TOKENS: 200
-  LIMIT: 2 # Maximum number of questions for evaluation dataset
+  MAX_TOKENS: 32000
+  LIMIT: 5 # Maximum number of questions for evaluation dataset
   CONSISTENCY_FACTOR: 1
   EPOCHS: 2
   BATCH_SIZE: 5

@@ -140,6 +140,7 @@ class MosaicJudgesInput:
 
 @dataclass
 class DspyFeedback:
+    name: str
     score: float
     feedback: str
 
