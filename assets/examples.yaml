@@ -64,16 +64,6 @@ examples:
         user_id: "maria.stylist"
         store_num: 101
 
-  demo_appointment_preparation:
-    messages:
-      - role: user
-        content: "What should I prepare for Victoria's appointment today?"
-    custom_inputs:
-      configurable:
-        thread_id: "1"
-        user_id: "maria.stylist"
-        store_num: 101
-
   demo_styling_support:
     messages:
       - role: user

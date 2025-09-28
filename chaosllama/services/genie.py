@@ -10,6 +10,7 @@ import random
 from concurrent.futures import ThreadPoolExecutor
 
 from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
+from langchain_core.language_models import BaseLLM
 
 from chaosllama.profiles.config import config
 from chaosllama.entities.models import GenieTelemetry, CATALOG
@@ -23,6 +24,7 @@ from chaosllama.profiles.config import config
 from pyspark.sql.functions import col as F
 from time import sleep
 from chaosllama.utils.utilities import get_spark_session
+
 
 
 env = dotenv_values(".env")
@@ -46,7 +48,7 @@ class GenieService():
         self.message_id = None
         self.client = _w.genie
         self.should_reply = should_reply
-        self.token = _w.tokens.create().token_value
+        self.token = env["DATABRICKS_TOKEN"] #_w.tokens.create().token_value
 
     @mlflow.trace(span_type=SpanType.TOOL)
     def poll_status(self, func_call: Callable,
@@ -337,7 +339,7 @@ class GenieAgent:
         self.client = self._w.genie
         self.should_reply = should_reply
         self.genie_mgr = GenieService(self.space_id, should_reply=True)
-        self.token = self._w.tokens.create().token_value
+        self.token =  env["DATABRICKS_TOKEN"] #self._w.tokens.create().token_value
 
     @mlflow.trace(name="🧞‍♂️ Genie Agent")
     def invoke(self, inputs):
@@ -345,3 +347,7 @@ class GenieAgent:
         # TODO: Uncomment and implement update_current_trace
         #mlflow.update_current_trace(request_preview=f"{question}")
         return self.genie_mgr.genie_workflow_v2(inputs).genie_query
+
+
+
+
