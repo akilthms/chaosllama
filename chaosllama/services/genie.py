@@ -48,7 +48,7 @@ class GenieService():
         self.message_id = None
         self.client = _w.genie
         self.should_reply = should_reply
-        self.token = env["DATABRICKS_TOKEN"] #_w.tokens.create().token_value
+        self.token = _w.tokens.create().token_value
 
     @mlflow.trace(span_type=SpanType.TOOL)
     def poll_status(self, func_call: Callable,
@@ -249,9 +249,10 @@ class GenieService():
     @classmethod
     def sleep(cls, seconds:int=30) -> None:
         # Randomly add a sleep timer from 0 to 10 seconds
-        rand_sleeper = random.randint(5,seconds)
+        rand_sleeper = random.randint(1,seconds)
+        print(f"⏳ Sleeping for {rand_sleeper} seconds before creating conversation....")
         time.sleep(rand_sleeper)
-        print(f"⏳ Slept for {rand_sleeper} seconds before creating conversation")
+        
 
     @mlflow.trace(span_type=SpanType.CHAIN)
     def genie_workflow_v2(self, inputs, timeout=1) -> GenieTelemetry:
@@ -263,7 +264,7 @@ class GenieService():
 
 
         message = self.start_conversation_and_wait_v2(content=question)
-        GenieService.sleep(seconds=index*30)
+        GenieService.sleep(seconds=index*30 + 1)
 
         
         message = self.poll_status(
@@ -339,7 +340,7 @@ class GenieAgent:
         self.client = self._w.genie
         self.should_reply = should_reply
         self.genie_mgr = GenieService(self.space_id, should_reply=True)
-        self.token =  env["DATABRICKS_TOKEN"] #self._w.tokens.create().token_value
+        self.token =  self._w.tokens.create().token_value
 
     @mlflow.trace(name="🧞‍♂️ Genie Agent")
     def invoke(self, inputs):
