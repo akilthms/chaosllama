@@ -1,6 +1,7 @@
 import mlflow
 from rich.console import Console
 from rich.panel import Panel
+from chaosllama.profiles.config import config
 
 console = Console()
 
@@ -38,6 +39,8 @@ class MLFlowExperimentManager:
         except Exception as e:
             print(f"Error getting experiment {EXPERIMENT_NAME} with Error: {e}")
 
+        mlflow.set_experiment(f"/Users/{config.DATABRICKS_USER_NAME}/{config.mlflow.MLFLOW_RUNTIME_EXPERIMENT}")
+        print(f"🧪 Set Experiment to '/Users/{config.DATABRICKS_USER_NAME}/{config.mlflow.MLFLOW_RUNTIME_EXPERIMENT}'")
         return self
 
     def set_experiment(self, experiment_name: str):

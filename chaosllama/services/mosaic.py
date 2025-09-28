@@ -31,11 +31,17 @@ class MosaicEvalService():
         records = eval_set.data.toPandas().to_dict(orient='records')
 
         eval_data = []
-        for rec in records:
-            inputs = dict(inputs=dict(inputs={"question": rec["question"]}),
-                          expectations=dict(guidelines=[rec["issues"]],
-                                            expected_response=rec["ground_truth_query"])
-                          )
+        for i, rec in enumerate(records):
+            inputs = dict(
+                inputs=dict(inputs={
+                                "question": rec["question"],
+                                "index": i
+                            }
+                        ),
+                expectations=dict(
+                    guidelines=[rec["issues"]],
+                    expected_response=rec["ground_truth_query"])
+                )
             eval_data.append(inputs)
 
         return eval_data

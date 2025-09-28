@@ -6,6 +6,7 @@ from databricks.sdk.service.dashboards import (
    GenieConversation, OperationFailed, MessageStatus)
 from typing import Callable
 import time
+import random
 from concurrent.futures import ThreadPoolExecutor
 
 from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
@@ -16,7 +17,6 @@ import mlflow
 from mlflow.entities import SpanType
 from datetime import datetime
 import requests
-from random import random
 from databricks.connect import DatabricksSession
 from dotenv import dotenv_values
 from chaosllama.profiles.config import config
@@ -113,7 +113,14 @@ class GenieService():
         payload = dict(content=content)
         headers = dict(Authorization=f"Bearer {self.token}")
         response = requests.post(f"{HOST}/{api}", json=payload, headers=headers).json()
-        return GenieMessage.from_dict(response['message'])
+
+        try:
+            final_response = GenieMessage.from_dict(response['message'])
+        except Exception as e:
+            print(f"❌ Error: {e}")
+            print(f"🧞‍♂️ Response from Genie: {response=}")
+
+        return final_response
 
     @mlflow.trace
     @retry_message(max_retries=2, delay=10)
@@ -121,7 +128,6 @@ class GenieService():
         api = f"api/2.0/genie/spaces/{self.space_id}/conversations/{conversation_id}/messages"
         payload = dict(content=content)
         headers = dict(Authorization=f"Bearer {self.token}")
-        time.sleep(random() * 4)
         resp = requests.post(f"{HOST}/{api}", json=payload, headers=headers).json()
         print(f"✉️ Sending Message {resp=}")
         try:
@@ -237,14 +243,27 @@ class GenieService():
 
         attachment = self.check_message_attachments(message)
         return message, attachment
+    
+    @classmethod
+    def sleep(cls, seconds:int=30) -> None:
+        # Randomly add a sleep timer from 0 to 10 seconds
+        rand_sleeper = random.randint(5,seconds)
+        time.sleep(rand_sleeper)
+        print(f"⏳ Slept for {rand_sleeper} seconds before creating conversation")
 
     @mlflow.trace(span_type=SpanType.CHAIN)
     def genie_workflow_v2(self, inputs, timeout=1) -> GenieTelemetry:
 
         question = inputs["question"]  # [TODO]: Add the system instructions to the question
         original_question = inputs["question"]
+        index=inputs["index"]
+
+
 
         message = self.start_conversation_and_wait_v2(content=question)
+        GenieService.sleep(seconds=index*30)
+
+        
         message = self.poll_status(
             self.get_message_v2,
             message_id=message.message_id,
@@ -307,7 +326,6 @@ class GenieService():
             results = [future.result() for future in futures]
 
         return [item for sublist in results for item in sublist]  # 📦 unpack results
-
 
 
 class GenieAgent:

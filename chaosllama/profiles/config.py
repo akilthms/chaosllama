@@ -35,6 +35,7 @@ class RuntimeConfig(BaseModel):
     BASELINE_CATALOG: str
     BASELINE_SCHEMA: str
     IS_CACHED: bool
+    REFRESH_DASHBOARD: bool
 
 
 class ScorerConfig(BaseModel):
@@ -48,6 +49,7 @@ class Config(BaseModel):
     SCHEMA: str
     SMALL_LLM_ENDPOINTS: str
     EVAL_TABLE_NAME: str
+    DATABRICKS_USER_NAME: str
     mlflow: MLFLowConfig
     genie: GenieConfig
     runtime: RuntimeConfig

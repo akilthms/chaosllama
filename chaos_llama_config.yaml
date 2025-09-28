@@ -4,14 +4,15 @@ SCHEMA: &SCHEMA
 CHAOS_ANALYTICS_TABLE_TEMPLATE: "${CATALOG}.${SCHEMA}.chaos_analytics"
 EVAL_TABLE_NAME: "eval_set"  # You can set this dynamically if needed
 CHAOS_LLAMA_PROFILE: "dev"
+DATABRICKS_USER_NAME: 
 
 
 # 🏃 Runtime Configuration
 runtime:
   MAX_TOKENS: 800
-  LIMIT: 2 # Maximum number of questions for evaluation dataset
+  LIMIT: 10 # Maximum number of questions for evaluation dataset
   CONSISTENCY_FACTOR: 1
-  EPOCHS: 2
+  EPOCHS: 1
   BATCH_SIZE: 5
   N_JOBS: 2
   VALIDATION_SET_LIMIT: 20
@@ -25,11 +26,12 @@ runtime:
   BASELINE_CATALOG: ""
   BASELINE_SCHEMA: ""
   IS_CACHED: False # Use cached results for the evaluation dataset
+  REFRESH_DASHBOARD: True
 
 # 🧞‍♂️ Genie Configuration
 genie:
-  RUNTIME_GENIE_SPACE_ID: "01f02a9a8ad0145d85f7fd4da2a27322"
-  NULL_HYPOTHESIS_GENIE_SPACE_ID: "01f0086525d917ddb7527333c5af68ba"
+  RUNTIME_GENIE_SPACE_ID: ""
+  NULL_HYPOTHESIS_GENIE_SPACE_ID: ""
   TEST_GENIE_SPACE_ID: ""
   BASELINE_GENIE_SPACE_ID: ""
   VALIDATION_GENIE_SPACE_ID: ""
@@ -95,9 +97,10 @@ scorers:
 
 mlflow:
   MLFLOW_RUNTIME_EXPERIMENT: "🦙ChaosLlama v3"
-  MLFLOW_EXPERIMENT_PATH: 
+  MLFLOW_EXPERIMENT_PATH: ""
   BEST_MLFLOW_RUN: ""
   MLFLOW_EXPERIMENTS:
+    - "🦙ChaosLlama v3"
     - "🦙ChaosLlama v2"
 
 
