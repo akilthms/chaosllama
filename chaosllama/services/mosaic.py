@@ -12,7 +12,9 @@ from databricks.sdk import WorkspaceClient
 from chaosllama.profiles.config import config
 from functools import reduce
 
-GLOBAL_GUIDELINES = config.scorers.global_guidelines["v2"]
+
+GLOBAL_GUIDELINES = config.scorers.global_guidelines[config.scorers.RUNTIME_VERSION]
+
 
 
 class MosaicEvalService():

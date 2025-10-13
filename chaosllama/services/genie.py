@@ -23,7 +23,7 @@ from dotenv import dotenv_values
 from chaosllama.profiles.config import config
 from pyspark.sql.functions import col as F
 from time import sleep
-from chaosllama.utils.utilities import get_spark_session
+from chaosllama.utils.utilities import get_spark_session, SparkSessionManager
 
 
 
@@ -31,7 +31,7 @@ env = dotenv_values(".env")
 PROFILE = env["DATABRICKS_PROFILE"]
 HOST = env["DATABRICKS_HOST"]
 SMALL_LLM_ENDPOINTS = config.SMALL_LLM_ENDPOINTS
-spark = get_spark_session()
+spark = SparkSessionManager().get_spark_session()
 EVAL_TABLE = f"{config.CATALOG}.{config.SCHEMA}.{config.EVAL_TABLE_NAME}"
 
 
@@ -121,6 +121,7 @@ class GenieService():
         except Exception as e:
             print(f"❌ Error: {e}")
             print(f"🧞‍♂️ Response from Genie: {response=}")
+            final_response = None
 
         return final_response
 
@@ -143,9 +144,7 @@ class GenieService():
 
     @mlflow.trace(span_type=SpanType.TOOL)
     def get_message_v2(self, conversation_id="", message_id: str = ""):
-        # HOST
         api = f"/api/2.0/genie/spaces/{self.space_id}/conversations/{conversation_id}/messages/{message_id}"
-
         headers = dict(Authorization=f"Bearer {self.token}")
         resp = requests.get(f"{HOST}/{api}", headers=headers).json()
         return GenieMessage.from_dict(resp)
@@ -234,9 +233,8 @@ class GenieService():
 
         print(f"🐛BUG {reply=}")
         message.id = message.message_id
-        # print(f"📞 Conversation: {message.conversation_id=}")
         message = self.create_message_and_wait_v2(reply, conversation_id=message.conversation_id)
-        # print(f"🪲🪲🪲: {message}")
+
         message = self.poll_status(
             self.get_message_v2,
             message_id=message.message_id,
@@ -259,14 +257,8 @@ class GenieService():
 
         question = inputs["question"]  # [TODO]: Add the system instructions to the question
         original_question = inputs["question"]
-        index=inputs["index"]
-
-
-
         message = self.start_conversation_and_wait_v2(content=question)
-        GenieService.sleep(seconds=index*30 + 1)
 
-        
         message = self.poll_status(
             self.get_message_v2,
             message_id=message.message_id,
@@ -340,14 +332,19 @@ class GenieAgent:
         self.client = self._w.genie
         self.should_reply = should_reply
         self.genie_mgr = GenieService(self.space_id, should_reply=True)
-        self.token =  self._w.tokens.create().token_value
+        self.token =  self.genie_mgr.token #self._w.tokens.create().token_value
 
-    @mlflow.trace(name="🧞‍♂️ Genie Agent")
+    #@mlflow.trace(name="🧞‍♂️ Genie Agent")
     def invoke(self, inputs):
         question = inputs['question']
         # TODO: Uncomment and implement update_current_trace
         #mlflow.update_current_trace(request_preview=f"{question}")
-        return self.genie_mgr.genie_workflow_v2(inputs).genie_query
+        results = self.genie_mgr.genie_workflow_v2(inputs)
+        time.sleep(secs:=60)
+        print(f"⏳ Sleeping for {secs} seconds before creating conversation....")
+        # GenieService.sleep(index=index + 1)
+        return results.genie_query
+
 
 
 

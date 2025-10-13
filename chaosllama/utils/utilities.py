@@ -51,7 +51,29 @@ def get_spark_session():
         spark = DatabricksSession.builder.getOrCreate()
     return spark
 
+class SparkSessionManager:
+    _instance = None
+    _spark = None
 
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(SparkSessionManager, cls).__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        if self._spark is None:
+            try:
+                from dotenv import dotenv_values
+                env = dotenv_values(".env")
+                PROFILE = env["DATABRICKS_PROFILE"]
+                self._spark = DatabricksSession.builder.profile(PROFILE).serverless(True).getOrCreate()
+                print(self._spark)
+            except Exception as e:
+                print(f"Error with serverless: {e}")
+                self._spark = DatabricksSession.builder.getOrCreate()
+
+    def get_spark_session(self):
+        return self._spark
 
 
 

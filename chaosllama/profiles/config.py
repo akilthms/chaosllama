@@ -43,6 +43,8 @@ class ScorerConfig(BaseModel):
     METRICS_DEFINITION: str
     global_guidelines: dict
     custom_scorers: list
+    RUNTIME_VERSION: str
+
 
 class Config(BaseModel):
     CATALOG: str

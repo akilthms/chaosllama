@@ -20,3 +20,4 @@ sqlparse
 rich
 rich-tools
 pyfiglet
+dspy-ai

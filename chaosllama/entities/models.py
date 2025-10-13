@@ -10,11 +10,11 @@ from langchain.prompts import PromptTemplate
 import pandas as pd
 from mlflow.entities import Feedback
 from databricks.connect import DatabricksSession
-from chaosllama.utils.utilities import get_spark_session
+from chaosllama.utils.utilities import get_spark_session, SparkSessionManager
 
 env = dotenv_values(".env")
 PROFILE = env["DATABRICKS_PROFILE"]
-spark = get_spark_session()
+spark = SparkSessionManager().get_spark_session()
 
 CATALOG = config.CATALOG
 SCHEMA = config.SCHEMA

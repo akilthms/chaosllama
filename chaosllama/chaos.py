@@ -93,6 +93,7 @@ class ChaosLlama():
             limit=None,
             is_cached=True,
             run_baseline=False,
+            run_from_checkpoint=False,
             run_null_hypothesis=False) -> Tuple[IntrospectionManager, mlflow.entities.Run]:
         """ The main entry point for running the ChaosLlama framework."""
         mlfmg = self.mlflow_manager

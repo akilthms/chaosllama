@@ -8,10 +8,10 @@ from pyspark.sql import functions as F
 import pandas as pd
 from rich.console import Console
 from rich.panel import Panel
-from chaosllama.utils.utilities import get_spark_session
+from chaosllama.utils.utilities import get_spark_session, SparkSessionManager
 env = dotenv_values(".env")
 PROFILE = env["DATABRICKS_PROFILE"]
-spark = get_spark_session()
+spark = SparkSessionManager().get_spark_session()
 console = Console()
 
 class EvalSetManager:

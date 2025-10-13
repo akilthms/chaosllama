@@ -27,7 +27,7 @@ if __name__ == "__main__":
                         limit=config.runtime.LIMIT,
                         consistency_factor=config.runtime.CONSISTENCY_FACTOR)
     evmngr.prepare_evals(mode="existing")
-    evmngr.write_evalset()
+    #evmngr.write_evalset()
 
     # 🧑‍🔬Set MLFLow Experiment
     exp_mngr = MLFlowExperimentManager(experiment_path=config.mlflow.MLFLOW_EXPERIMENT_PATH).get_or_create_mlflow_experiment(config.mlflow.MLFLOW_RUNTIME_EXPERIMENT)
