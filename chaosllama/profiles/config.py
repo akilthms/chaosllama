@@ -7,6 +7,7 @@ class MLFLowConfig(BaseModel):
     BEST_MLFLOW_RUN: str
     MLFLOW_EXPERIMENTS: list
     MLFLOW_EXPERIMENT_PATH: str
+    MLFLOW_CHECKPOINT_RUN: str
 
 class GenieConfig(BaseModel):
     RUNTIME_GENIE_SPACE_ID: str
@@ -28,6 +29,7 @@ class RuntimeConfig(BaseModel):
     REFRESH_DASHBOARD: bool
     RUN_BASELINE: bool
     RUN_NULL_HYPOTHESIS: bool
+    RUN_FROM_CHECKPOINT: bool
     INTROSPECTION_LOOKBACK: int
     DEBUG: bool
     IS_TRIGGERED_FROM_CHECKPOINT: bool

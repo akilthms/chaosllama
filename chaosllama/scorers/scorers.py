@@ -140,10 +140,10 @@ def eval_query_results(inputs: dict, outputs: dict, expectations: Optional[dict[
                                   and the ground truth sql query are different: 
                                   
     Predicted Datafrmae:
-    {scores[0][0]}
+    {scores[0][1]}
     
     Ground Truth Dataframe:
-    {scores[0][1]}
+    {scores[0][0]}
     """
 
     rationale_logic = (

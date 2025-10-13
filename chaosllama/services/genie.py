@@ -21,7 +21,7 @@ import requests
 from databricks.connect import DatabricksSession
 from dotenv import dotenv_values
 from chaosllama.profiles.config import config
-from pyspark.sql.functions import col as F
+from pyspark.sql import functions as F
 from time import sleep
 from chaosllama.utils.utilities import get_spark_session
 
@@ -42,13 +42,14 @@ class GenieService():
     """ The purpose of this class is to manage the various interactions with the Genie Conversational API"""
 
 
-    def __init__(self, space_id: str, should_reply: bool = False):
+    def __init__(self, space_id: str, should_reply: bool = False, timeout: int = 60):
         self.space_id = space_id
         self.conversation_id = None
         self.message_id = None
         self.client = _w.genie
         self.should_reply = should_reply
         self.token = _w.tokens.create().token_value
+        self.timeout = timeout
 
     @mlflow.trace(span_type=SpanType.TOOL)
     def poll_status(self, func_call: Callable,
@@ -242,13 +243,15 @@ class GenieService():
             message_id=message.message_id,
             conversation_id=message.conversation_id,
         )
+        print(f"Synthesizing Reply for {message=}")
 
         attachment = self.check_message_attachments(message)
         return message, attachment
     
     @classmethod
-    def sleep(cls, seconds:int=30) -> None:
+    def sleep(cls, index:int, multiplier: int=30) -> None:
         # Randomly add a sleep timer from 0 to 10 seconds
+        seconds = multiplier * index
         rand_sleeper = random.randint(1,seconds)
         print(f"⏳ Sleeping for {rand_sleeper} seconds before creating conversation....")
         time.sleep(rand_sleeper)
@@ -258,13 +261,12 @@ class GenieService():
     def genie_workflow_v2(self, inputs, timeout=1) -> GenieTelemetry:
 
         question = inputs["question"]  # [TODO]: Add the system instructions to the question
-        original_question = inputs["question"]
-        index=inputs["index"]
+        original_question = question.split("\n")[-1]
 
 
 
         message = self.start_conversation_and_wait_v2(content=question)
-        GenieService.sleep(seconds=index*30 + 1)
+
 
         
         message = self.poll_status(
@@ -301,7 +303,7 @@ class GenieService():
                 row_count=genie_query_attachment.query_result_metadata.row_count if genie_query_attachment else None
             )
 
-            sleep(timeout)
+
         else:
             print("❎ No Message")
             genie_telem = GenieTelemetry(
@@ -334,20 +336,26 @@ class GenieService():
 class GenieAgent:
     """ Refactored Version of the Genie Manager into an Agent to fit into MLFlow 3.0 paradigm"""
 
-    def __init__(self, space_id:str, should_reply:bool = True):
+    def __init__(self, space_id:str, should_reply:bool = True, timeout:int=60):
         self.space_id = space_id
         self._w = _w
         self.client = self._w.genie
         self.should_reply = should_reply
         self.genie_mgr = GenieService(self.space_id, should_reply=True)
         self.token =  self._w.tokens.create().token_value
+        self.timeout = timeout
 
     @mlflow.trace(name="🧞‍♂️ Genie Agent")
     def invoke(self, inputs):
-        question = inputs['question']
+        # question = inputs['question']
+        # index = inputs['index']
         # TODO: Uncomment and implement update_current_trace
         #mlflow.update_current_trace(request_preview=f"{question}")
-        return self.genie_mgr.genie_workflow_v2(inputs).genie_query
+        results = self.genie_mgr.genie_workflow_v2(inputs)
+        time.sleep(self.timeout)
+        print(f"⏳ Sleeping for {self.timeout} seconds before creating conversation....")
+        #GenieService.sleep(index=index + 1)
+        return results.genie_query
 
 
 

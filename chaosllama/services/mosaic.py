@@ -4,7 +4,7 @@ import pandas as pd
 from chaosllama.services.genie import GenieService, GenieAgent
 from chaosllama.services.judges import JudgeService
 from chaosllama.services.evaluation_dataset import EvalSetManager
-from chaosllama.entities.models import EvalSetTable, IntrospectionManager
+from chaosllama.entities.models import EvalSetTable, IntrospectionManager, ChaosFeedback
 import mlflow
 from mlflow.entities import SpanType, Feedback
 from mlflow.genai.scorers import Correctness, RelevanceToQuery, ExpectationsGuidelines, Guidelines
@@ -45,20 +45,31 @@ class MosaicEvalService():
             eval_data.append(inputs)
 
         return eval_data
+    
+    def format_feedback(self, feedbacks: list[Feedback]) -> list[ChaosFeedback]:
+        chaos_feedbacks = []
+        for feedback in feedbacks:
+            if isinstance(feedback, Feedback):
+                name = feedback.name
+                rationale = feedback.rationale
+                value = feedback.feedback.value
+                chaos_feedbacks.append(ChaosFeedback(name=name, rationale=rationale, value=value))
+        return chaos_feedbacks
 
-    def get_feedback(self, assessment: mlflow.models.evaluation.base.EvaluationResult) -> list[Feedback]:
+
+    def get_feedback(self, assessment: mlflow.models.evaluation.base.EvaluationResult) -> list[ChaosFeedback]:
         """ The purpose of this function is to ingest the evaluation dataset and produce a set of telemetry data that can be used to for the IntrospectionAI """
         traces = mlflow.search_traces(experiment_ids=[self.experiment_id], run_id=assessment.run_id)
-        feedback = reduce(lambda x, y: x + y, traces["assessments"].to_list())
-        return feedback
+        feedbacks = reduce(lambda x, y: x + y, traces["assessments"].to_list())
+        return self.format_feedback(feedbacks)
 
     @mlflow.trace(name="🧪 Mosaic Evaluation WorkFlow", span_type=SpanType.CHAIN)
     def run_evaluations(self, genie_space_id, timeout=1, validation_set=None) -> IntrospectionManager:
         """ The purpose of this function is to ingest the evaluation dataset and produce a set of telemetry data that can be used to for the IntrospectionAI"""
-        genie_manager = GenieService(space_id=genie_space_id, should_reply=True)
+        genie_manager = self.genie_manager# GenieService(space_id=genie_space_id, should_reply=True)
         intrsmg = IntrospectionManager()
 
-        genie_agent = GenieAgent(space_id=genie_space_id)
+        genie_agent = GenieAgent(space_id=genie_space_id, timeout=genie_manager.timeout )
         global_guidelines = GLOBAL_GUIDELINES
         guidelines = [Guidelines(name=name, guidelines=g[0]) for name, g in global_guidelines.items()]
 
@@ -91,7 +102,8 @@ class MosaicEvalService():
             parent_run_id=None,
             experiment_id:str=None,
             mode: Literal["null_hypothesis", "baseline", "validation", "optimization"] = None,
-            optimization_id:int=None
+            optimization_id:int=None,
+            **kwargs
     ) -> Tuple[IntrospectionManager, mlflow.entities.Run]:
         """
         The purpose of this function is to create an experiment run in MLFlow for the Mosaic Evaluation Service.
@@ -126,6 +138,11 @@ class MosaicEvalService():
                 genie_space_id = config.genie.RUNTIME_GENIE_SPACE_ID
                 run_name = f" 🔄 Optimization Cycle {optimization_id}"
                 experiment_type = "optimization"
+            
+            case "checkpoint":
+                genie_space_id = config.genie.RUNTIME_GENIE_SPACE_ID
+                run_name = f"🏁 Checkpoint Run from {kwargs["checkpoint_id"]}"
+                experiment_type = "checkpoint"
 
             case _:
                 raise ValueError("Invalid mode. Please choose 'null_hypothesis' or 'baseline'.")

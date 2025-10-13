@@ -178,6 +178,16 @@ class GenieTelemetry:
 
 
 # =================== AI Data Model  ================================
+
+@dataclass
+class ChaosFeedback:
+    """ Pairing down the robust feedback from evaluation harness of mlflow"""
+    name: str
+    rationale: str
+    value: str | float
+
+
+
 @dataclass
 class IntrospectionManager:
     genie_telemetry: list[GenieTelemetry] = field(default_factory=list)
@@ -378,6 +388,13 @@ class EvalSetTable(ChaosLlamaTable):
             self.data = self.data.limit(limit)
         elif limit and isinstance(self.data, pd.DataFrame):
             self.data = self.data.head(limit)
+        return self
+
+    def filter(self, filter_str: str) -> Self:
+        if isinstance(self.data, pyspark.sql.DataFrame):
+            self.data = self.data.filter(filter_str)
+        elif isinstance(self.data, pd.DataFrame):
+            raise NotImplementedError("Filtering is not supported for pandas DataFrames.")
         return self
 
     def replicate_rows(self, consistency_factor: int = 1) -> Self:

@@ -93,6 +93,7 @@ class ChaosLlama():
             limit=None,
             is_cached=True,
             run_baseline=False,
+            run_from_checkpoint=False,
             run_null_hypothesis=False) -> Tuple[IntrospectionManager, mlflow.entities.Run]:
         """ The main entry point for running the ChaosLlama framework."""
         mlfmg = self.mlflow_manager
@@ -106,26 +107,37 @@ class ChaosLlama():
         with mlflow.start_run(experiment_id=mlfmg.experiment_id) as parent_run:
             mlfmg.eval_manager.eval_set.data = mlfmg.eval_manager.eval_set.data.withColumn("original_question", F.col("question"))
 
-            if run_baseline: mlfmg.create_experiment_run(parent_run_id=parent_run.run_id, mode="baseline")
-            if run_null_hypothesis: mlfmg.create_experiment_run(parent_run_id=parent_run.run_id, mode="null_hypothesis")
+            if run_baseline: mlfmg.create_experiment_run(parent_run_id=parent_run.info.run_id, mode="baseline")
+            if run_null_hypothesis: mlfmg.create_experiment_run(parent_run_id=parent_run.info.run_id, mode="null_hypothesis")
 
-            # [TODO]: create a function in Primer class called clone_runs
-            if config.runtime.IS_TRIGGERED_FROM_CHECKPOINT:
-                raise NotImplementedError("ChaosLlama run from checkpoint is not implemented yet.")
-                # primer.run_introspection() # Trigger Chaos LLama run from prexisting runs
+
 
             introspective_data = []
             introspection_director = IntrospectionManager() # Manages All IntrospectiveManagers
+            
+            # [TODO]: create a function in Primer class called clone_runs
+
+            
             for i in range(epochs):
+
+                if run_from_checkpoint:  # Trigger Chaos LLama run from prexisting runs
+                    fstr = f"attributes.run_id IN ('{config.mlflow.MLFLOW_CHECKPOINT_RUN}')"
+                    run = mlflow.search_runs(filter_string=fstr, search_all_experiments=True)
+                    ai_system_instruction = run["params.ai_system_instruction"].iloc[0]
+                    print(f"🏁 Initiating Optimization Run From Checkpoint with run id:{config.mlflow.MLFLOW_CHECKPOINT_RUN}")
+                    mlfmg.eval_manager.simulate_system_instruction_update(ai_system_instruction)
+                    
+
                 if introspection_director.metadata_suggestions:
                     ai_system_instruction = introspection_director.metadata_suggestions[-1].ai_system_instruction
                     mlfmg.eval_manager.simulate_system_instruction_update(ai_system_instruction)
 
                 print(f"{'=' * 10} 🖥️ Displaying 🔄 Cycle {i + 1} Eval Data {"=" * 10}")
+                mode = "checkpoint" if run_from_checkpoint else "optimization"
                 introspection_director, exp_run = mlfmg.create_experiment_run(introspection_director,
                                                                         parent_run_id=parent_run.info.run_id,
                                                                         experiment_id=mlfmg.experiment_id,
-                                                                        mode="optimization",
+                                                                        mode=mode,
                                                                         optimization_id=i+1)
 
                 lookback = config.runtime.INTROSPECTION_LOOKBACK
