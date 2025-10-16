@@ -43,11 +43,12 @@ def get_spark_session():
     try:
         from dotenv import dotenv_values
         env = dotenv_values(".env")
+        print("Env", env)
         PROFILE = env["DATABRICKS_PROFILE"]
         spark = DatabricksSession.builder.profile(PROFILE).serverless(True).getOrCreate()
         print(spark)
     except Exception as e:
-        print(f"Error with serverless: {e}")
+        print(f"Error with serverless: {e}. Attempting without serverless...")
         spark = DatabricksSession.builder.getOrCreate()
     return spark
 
