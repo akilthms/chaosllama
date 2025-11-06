@@ -21,7 +21,8 @@ runtime:
   RUN_NULL_HYPOTHESIS: False
   INTROSPECTION_LOOKBACK: 3
   DEBUG: false
-  IS_TRIGGERED_FROM_CHECKPOINT: false # Start the Chaos Llama run from a checkpoint
+  IS_TRIGGERED_FROM_CHECKPOINT: False # Start the Chaos Llama run from a checkpoint
+  RUN_FROM_CHECKPOINT: False
   INTROSPECT_AGENT_LLM_ENDPOINT: &INTROSPECT_AGENT_LLM_ENDPOINT "databricks-claude-3-7-sonnet"
   BASELINE_CATALOG: ""
   BASELINE_SCHEMA: ""
@@ -98,6 +99,7 @@ scorers:
 mlflow:
   MLFLOW_RUNTIME_EXPERIMENT: "🦙ChaosLlama v3"
   MLFLOW_EXPERIMENT_PATH: ""
+  MLFLOW_CHECKPOINT_RUN: ""
   BEST_MLFLOW_RUN: ""
   MLFLOW_EXPERIMENTS:
     - "🦙ChaosLlama v3"

@@ -1,5 +1,8 @@
-from typing import Optional, Literal, Self
-from dotenv import dotenv_values
+from typing import Optional, Literal
+try:    from dotenv import dotenv_values
+except ModuleNotFoundError:
+    dotenv_values = None
+
 from chaosllama.entities.models import EvalSetTable
 from databricks.connect import DatabricksSession
 from chaosllama.synthetic_data.synthesize import SyntheticDataGenerator
@@ -21,7 +24,7 @@ class EvalSetManager:
         self.limit = limit
         self.consistency_factor = consistency_factor
 
-    def write_evalset(self) -> Self:
+    def write_evalset(self):
         """ Write the evaluation set to the specified table in Unity Catalog. """
 
         if self.eval_set.data is not None:
@@ -44,16 +47,16 @@ class EvalSetManager:
         return self
 
 
-    def simulate_system_instruction_update(self, ai_suggested_instruction: str) -> Self:
+    def simulate_system_instruction_update(self, ai_suggested_instruction: str):
         """ Simulate the update of the system instruction in the evaluation set. """
         if not self.eval_set:
             raise ValueError("EvalSet does not exist, please create it first.")
 
         if isinstance(self.eval_set.data, pd.DataFrame):
-            self.eval_set.data["question"] = ai_suggested_instruction + "\n" + self.eval_set.data["question"]
+            self.eval_set.data["genie_input"] = ai_suggested_instruction + "\n" + self.eval_set.data["question"]
         else:
             self.eval_set.data = (
-                self.eval_set.data.withColumn("question", F.concat(F.lit(ai_suggested_instruction),
+                self.eval_set.data.withColumn("genie_input", F.concat(F.lit(ai_suggested_instruction),
                                                                    F.lit("\n"),
                                                                    F.col("question")))
             )
@@ -61,7 +64,7 @@ class EvalSetManager:
         return self
 
 
-    def get_evalset(self, mode: Literal["synthetic", "existing"] = "existing", **kwargs) -> Self:
+    def get_evalset(self, mode: Literal["synthetic", "existing"] = "existing", **kwargs):
         """ Create the evaluation set for the optimization run, based on the provided configuration. """
 
 
@@ -124,8 +127,23 @@ class EvalSetManager:
 
 
         return self
+    
+    @staticmethod
+    def display_evalset(df):
+        # Based on type of df, display differently. 
+        print(df[["question", "ground_truth_query"]])
 
-    def prepare_evals(self, mode: Literal["synthetic", "existing"] = "existing", **kwargs) -> Self:
+    def add_genie_input_col(self, col_name="genie_input"):
+        if (isinstance(self.eval_set.data, pyspark.sql.dataframe.DataFrame) 
+            or 
+            isinstance(self.eval_set.data, pyspark.sql.connect.dataframe.DataFrame)):
+            self.eval_set.data = self.eval_set.data.withColumn(col_name, F.col("question"))
+        else:
+            raise NotImplementedError("Non pyspark DataFrames not supported")
+
+    def prepare_evals(self, mode: Literal["synthetic", "existing"] = "existing", filter:str=None,**kwargs):
+        """ Prepare the evaluation set for the optimization run"""
+
         console.print(Panel("📐Prepping Evaluation Dataset", expand=False, style="bold cyan"))
 
         if not self.eval_set:
@@ -133,15 +151,32 @@ class EvalSetManager:
                 print("Getting Evaluation Dataset!")
             self.get_evalset(mode=mode)
 
-        evaluation_dataset = (
-            self.eval_set
-                .limit(self.limit)
-                .replicate_rows(self.consistency_factor)
-        )
+        if self.limit is None or self.limit == 0:
+            print("No limit specified")
+            if filter: print(f"Filtering on {filter}")
+            evaluation_dataset = (
+                self.eval_set
+                    .filter(filter)
+                    .replicate_rows(self.consistency_factor) 
+            )
+        
+        else:
+            evaluation_dataset = (
+                self.eval_set
+                    .limit(self.limit)
+                    .filter(filter)
+                    .replicate_rows(self.consistency_factor)
+            )
 
-        if isinstance(evaluation_dataset.data, pyspark.sql.dataframe.DataFrame):
+        if (isinstance(evaluation_dataset.data, pyspark.sql.dataframe.DataFrame) 
+            or 
+            isinstance(evaluation_dataset.data, pyspark.sql.connect.dataframe.DataFrame)):
             display_eval_df = evaluation_dataset.data.toPandas()
         else: 
             display_eval_df = evaluation_dataset.data
-        print(display_eval_df)
+        
+        self.add_genie_input_col()
+
+        EvalSetManager.display_evalset(display_eval_df)
+
         return self

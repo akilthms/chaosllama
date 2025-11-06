@@ -4,15 +4,19 @@ import pandas as pd
 from chaosllama.services.genie import GenieService, GenieAgent
 from chaosllama.services.judges import JudgeService
 from chaosllama.services.evaluation_dataset import EvalSetManager
-from chaosllama.entities.models import EvalSetTable, IntrospectionManager, ChaosFeedback
+from chaosllama.entities.models import EvalSetTable, IntrospectionManager, ChaosFeedback, Introspection
 import mlflow
 from mlflow.entities import SpanType, Feedback
 from mlflow.genai.scorers import Correctness, RelevanceToQuery, ExpectationsGuidelines, Guidelines
 from databricks.sdk import WorkspaceClient
 from chaosllama.profiles.config import config
 from functools import reduce
+import sys 
+from pprint import pprint
+from collections import defaultdict
 
-GLOBAL_GUIDELINES = config.scorers.global_guidelines["v2"]
+
+GLOBAL_GUIDELINES = config.scorers.global_guidelines[config.runtime.JUDGE_VERSION]
 
 
 class MosaicEvalService():
@@ -34,6 +38,7 @@ class MosaicEvalService():
         for i, rec in enumerate(records):
             inputs = dict(
                 inputs=dict(inputs={
+                                "genie_input": rec["genie_input"],
                                 "question": rec["question"],
                                 "index": i
                             }
@@ -43,18 +48,41 @@ class MosaicEvalService():
                     expected_response=rec["ground_truth_query"])
                 )
             eval_data.append(inputs)
-
+            
         return eval_data
     
     def format_feedback(self, feedbacks: list[Feedback]) -> list[ChaosFeedback]:
         chaos_feedbacks = []
         for feedback in feedbacks:
-            if isinstance(feedback, Feedback):
-                name = feedback.name
-                rationale = feedback.rationale
-                value = feedback.feedback.value
+            # if isinstance(feedback, Feedback):
+            #     name = feedback.name
+            #     rationale = feedback.rationale
+            #     value = feedback.feedback.value
+            #     chaos_feedbacks.append(ChaosFeedback(name=name, rationale=rationale, value=value))
+
+            #if mlflow.__version__ == '3.4.0'
+
+            source_type = feedback["source"]["source_type"]
+
+            if (source_type == "LLM_JUDGE") or (source_type == "CODE") :
+                name  = feedback["assessment_name"]
+                value = feedback["feedback"]["value"]
+                try:
+                   rationale = feedback["rationale"]
+                except Exception as e:
+                    print(f"Error retrieving rationale for feedback {name}: {e}")
+                    rationale = "NO RATIONALE PROVIDED. IGNORE THIS FEEDBACK."
+                
                 chaos_feedbacks.append(ChaosFeedback(name=name, rationale=rationale, value=value))
         return chaos_feedbacks
+    
+    def _calculate_custom_judges_scores(self, feedbacks):
+        metrics_map = defaultdict(int)
+        for f in feedbacks:
+            metrics_map[f.name] += 1 if (((f.value == "True") or (f.value == "Pass") or (f.value == 1))) else 0
+        return metrics_map
+
+
 
 
     def get_feedback(self, assessment: mlflow.models.evaluation.base.EvaluationResult) -> list[ChaosFeedback]:
@@ -64,7 +92,7 @@ class MosaicEvalService():
         return self.format_feedback(feedbacks)
 
     @mlflow.trace(name="🧪 Mosaic Evaluation WorkFlow", span_type=SpanType.CHAIN)
-    def run_evaluations(self, genie_space_id, timeout=1, validation_set=None) -> IntrospectionManager:
+    def run_evaluations(self, introspection_director, genie_space_id, timeout=1, validation_set=None, optimization_id=None) -> IntrospectionManager:
         """ The purpose of this function is to ingest the evaluation dataset and produce a set of telemetry data that can be used to for the IntrospectionAI"""
         genie_manager = self.genie_manager# GenieService(space_id=genie_space_id, should_reply=True)
         intrsmg = IntrospectionManager()
@@ -74,7 +102,13 @@ class MosaicEvalService():
         guidelines = [Guidelines(name=name, guidelines=g[0]) for name, g in global_guidelines.items()]
 
         scorers: list[Callable] = self.judge_manager.scorers
-        print("🥅",scorers)
+        judges: list[Callable] = self.judge_manager.judges
+        print("🥅",judges)
+        
+        # print("🥅 Scorers:")
+        # for sc in guidelines + scorers:
+        #     print(sc.name)
+
         eval_dataset = self._prepare_inputs(self.eval_manager.eval_set)
 
         completed_assessment = mlflow.genai.evaluate(
@@ -82,19 +116,40 @@ class MosaicEvalService():
             predict_fn=genie_agent.invoke,
             scorers=[
                 *scorers,
-                *guidelines,
-                Correctness(),
-                RelevanceToQuery(),
+                *judges,
+               # Correctness(),
                 ExpectationsGuidelines(),
             ]
         )
 
-        intrsmg.add_feedback(self.get_feedback(completed_assessment)) \
-            .add_overall_quality_score(completed_assessment.metrics)
+        feedbacks = self.get_feedback(completed_assessment)
+
+        metrics_map = self._calculate_custom_judges_scores(feedbacks)
+        for judge in judges:
+            completed_assessment.metrics[f"avg_{judge.name}"] = metrics_map[judge.name]/len(eval_dataset)
+
+        
+        intrspection = Introspection(
+            feedback=self.get_feedback(completed_assessment),
+            overall_quality_score=completed_assessment.metrics,
+            optimization_id=optimization_id
+        )
+
+        introspection_director.add_instrospection(introspection)
+
+        # introspection_director.add_feedback(feedbacks) \
+        #        .add_overall_quality_score(completed_assessment.metrics, optimization_id) \
+        #        .add_introspection(
+        #            Introspection(
+        #                feedback=self.get_feedback(completed_assessment),
+        #                overall_quality_score=completed_assessment.metrics,
+        #                optimization_id=optimization_id
+        #            )
+        #        )
 
         self.log_metadata(completed_assessment)
 
-        return intrsmg
+        return introspection_director
 
     def create_experiment_run(
             self,
@@ -141,7 +196,7 @@ class MosaicEvalService():
             
             case "checkpoint":
                 genie_space_id = config.genie.RUNTIME_GENIE_SPACE_ID
-                run_name = f"🏁 Checkpoint Run from {kwargs["checkpoint_id"]}"
+                run_name = f"🏁 Checkpoint Run from {kwargs['checkpoint_id']}"
                 experiment_type = "checkpoint"
 
             case _:
@@ -154,7 +209,7 @@ class MosaicEvalService():
                               parent_run_id=parent_run_id,
                               experiment_id=experiment_id) as experiment_run:
             mlflow.set_tag(experiment_type, True)
-            instrmg = self.run_evaluations(genie_space_id)
+            instrmg = self.run_evaluations(introspection_director, genie_space_id, optimization_id=optimization_id)
             mlflow.log_param("step", optimization_id)
 
         return instrmg, experiment_run
@@ -162,6 +217,8 @@ class MosaicEvalService():
     def log_metadata(self, assessment:mlflow.models.EvaluationResult) -> None:
       """ Log all the metadata for the evaluation run """
       metadata = assessment.metrics
+      print("Metrics!!!!")
+      print(metadata)
       for k,v in metadata.items():
         # rename metric name
         metric_name = "avg_" + "_".join(k.split("/")[:-1]).replace("/", "_")

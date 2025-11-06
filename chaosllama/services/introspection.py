@@ -2,13 +2,14 @@ import mlflow
 from typing import List, Dict, Optional, Union
 from abc import ABC
 from mlflow.entities import SpanType, Feedback
-from chaosllama.entities.models import AgentConfig, AgentInput, IntrospectionManager
+from chaosllama.entities.models import AgentConfig, AgentInput, IntrospectionManager, Introspection, ReflectionOutput, AISuggestion
 import pandas as pd
 from langchain.chat_models import ChatDatabricks
 import chaosllama.prompts.registry as cll_prompts
 import time
 from dataclasses import asdict
-
+from rich.console import Console
+from rich.markdown import Markdown
 
 
 @mlflow.trace
@@ -51,6 +52,7 @@ class IntrospectionAIAgent():
                 cll_prompts.introspection_parser
         )
 
+
         return self
 
     def retry_introspection(max_retries: int = 2, delay: int = 1):
@@ -86,14 +88,64 @@ class IntrospectionAIAgent():
 
         updated_metadata: dict = self.agent.invoke(asdict(inputs))
 
+        print("***Format System Instructions****")
+        print(self.agent_config.system_prompt.format(**asdict(inputs)))
+
         # TODO: Store metadata about introspection to DELTA tables
+        print("Metadata from introspection:")
+        print(updated_metadata)
         return updated_metadata
 
     @mlflow.trace(span_type=SpanType.TOOL)
+    @retry_introspection()
+    def introspect_v2(self, inputs: List[Introspection], optimization_id=None) -> AISuggestion:
+        if not self.agent:
+            self.create_agent()
+
+        optimized_metadata: ReflectionOutput = self.agent.invoke(asdict(inputs))
+
+        print("***Format System Instructions****")
+        print(self.agent_config.system_prompt.format(**asdict(inputs)))
+
+        # TODO: Store metadata about introspection to DELTA tables
+        print("Optimized System Instructions from introspection:")
+        
+        Console().print(Markdown(optimized_metadata.ai_system_instruction))
+        
+        return AISuggestion(
+            ai_system_instruction=optimized_metadata.ai_system_instruction,
+            optimization_id=optimization_id
+        )
+
+        
+    @mlflow.trace(span_type=SpanType.TOOL)
+    @retry_introspection()
+    def introspect_v3(self, inputs: List[Introspection]) -> AISuggestion:
+        if not self.agent:
+            self.create_agent()
+
+        optimized_metadata: ReflectionOutput = self.agent.invoke(asdict(inputs))
+
+        print("***Format System Instructions****")
+        pprint(self.agent_config.system_prompt.format(**asdict(inputs)))
+
+        # TODO: Store metadata about introspection to DELTA tables
+        print("Optimized System Instructions from introspection:")
+        
+        Console().print(Markdown(optimized_metadata.ai_system_instruction))
+        
+        return AISuggestion(
+            ai_system_instruction=optimized_metadata.ai_system_instruction,
+            optimization_id=optimization_id
+        )
+
+    @mlflow.trace(name="🧠 Introspection Agent")
     def optimize(self, agent_input, mode="system_instructions"):
         match mode:
             case "system_instructions":
                 self.introspect(agent_input)
+            case "system_instructions_v2":
+                self.introspect_v2(agent_input)
             case "column_description":
                 pass
             case _:

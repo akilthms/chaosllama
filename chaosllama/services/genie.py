@@ -260,8 +260,8 @@ class GenieService():
     @mlflow.trace(span_type=SpanType.CHAIN)
     def genie_workflow_v2(self, inputs, timeout=1) -> GenieTelemetry:
 
-        question = inputs["question"]  # [TODO]: Add the system instructions to the question
-        original_question = question.split("\n")[-1]
+        question = inputs["genie_input"]  # [TODO]: Add the system instructions to the question
+        original_question = inputs["question"] #question.split("\n")[-1]
 
 
 
@@ -336,7 +336,7 @@ class GenieService():
 class GenieAgent:
     """ Refactored Version of the Genie Manager into an Agent to fit into MLFlow 3.0 paradigm"""
 
-    def __init__(self, space_id:str, should_reply:bool = True, timeout:int=60):
+    def __init__(self, space_id:str, should_reply:bool = True, timeout:int=30):
         self.space_id = space_id
         self._w = _w
         self.client = self._w.genie

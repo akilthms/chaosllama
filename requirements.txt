@@ -5,7 +5,7 @@ databricks-connect==16.1
 python-dotenv==1.1.1
 pydantic==2.11.7
 deltalake
-langchain
+langchain==0.3.27
 mlflow==3.1.4
 marko
 sqlglot
@@ -20,3 +20,4 @@ sqlparse
 rich
 rich-tools
 pyfiglet
+typing_extensions==4.14.1

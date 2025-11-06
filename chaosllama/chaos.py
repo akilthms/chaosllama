@@ -8,7 +8,7 @@ from mlflow.entities import SpanType
 from abc import ABC
 from chaosllama.profiles.config import config
 from pyspark.sql import functions as F
-from chaosllama.entities.models import AgentConfig, IntrospectionManager, AgentInput
+from chaosllama.entities.models import AgentConfig, IntrospectionManager, IntrospectionManager_v2, AgentInput, Introspection
 
 
 @dataclass
@@ -99,7 +99,7 @@ class ChaosLlama():
         mlfmg = self.mlflow_manager
         # primer = PrimerManager(mlflow_parent_run_id=BEST_MLFLOW_RUNS_MAP.get(PARENT_RUN_NAME))
         # 🕵 Initialize Agent
-        intropsective_agent = IntrospectionAIAgent(self.agent_config)
+        introspsective_agent = IntrospectionAIAgent(self.agent_config)
 
         # 💰 Cache
         if is_cached: mlfmg.eval_set.data.cache().count()
@@ -113,8 +113,7 @@ class ChaosLlama():
 
 
             introspective_data = []
-            introspection_director = IntrospectionManager() # Manages All IntrospectiveManagers
-            
+            introspection_director = IntrospectionManager_v2() # Manages All IntrospectiveManagers
             # [TODO]: create a function in Primer class called clone_runs
 
             
@@ -128,11 +127,11 @@ class ChaosLlama():
                     mlfmg.eval_manager.simulate_system_instruction_update(ai_system_instruction)
                     
 
-                if introspection_director.metadata_suggestions:
-                    ai_system_instruction = introspection_director.metadata_suggestions[-1].ai_system_instruction
+                if introspection_director.system_instructions_history: 
+                    ai_system_instruction = introspection_director.system_instructions_history[-1].ai_system_instruction
                     mlfmg.eval_manager.simulate_system_instruction_update(ai_system_instruction)
 
-                print(f"{'=' * 10} 🖥️ Displaying 🔄 Cycle {i + 1} Eval Data {"=" * 10}")
+                print(f"{'=' * 10} 🖥️ Displaying 🔄 Cycle {i + 1} Eval Data {'=' * 10}")
                 mode = "checkpoint" if run_from_checkpoint else "optimization"
                 introspection_director, exp_run = mlfmg.create_experiment_run(introspection_director,
                                                                         parent_run_id=parent_run.info.run_id,
@@ -141,17 +140,29 @@ class ChaosLlama():
                                                                         optimization_id=i+1)
 
                 lookback = config.runtime.INTROSPECTION_LOOKBACK
-                reflection_data = AgentInput(
-                    quality_threshold=config.scorers.QUALITY_THRESHOLD,
-                    data_intelligence=introspection_director.feedback[-lookback:],
-                    overall_quality_score=introspection_director.overall_quality_score[-lookback:],
-                    system_instructions_history=introspection_director.metadata_suggestions[-lookback:],
-                    optimization_id=introspection_director.optimization_id
-                )
+                # reflection_data = AgentInput(
+                #     quality_threshold=config.scorers.QUALITY_THRESHOLD,
+                #     data_intelligence=introspection_director.feedback[-lookback:],
+                #     overall_quality_score=introspection_director.overall_quality_score[-lookback:],
+                #     system_instructions_history=introspection_director.metadata_suggestions[-lookback:],
+                #     optimization_id=introspection_director.optimization_id
+                # )
 
                 # 🤖🎤 AI Suggestion as a result of introspection
-                ai_suggestion = intropsective_agent.introspect(reflection_data)
+                #ai_suggestion = introspsective_agent.introspect(reflection_data)
+                
+
+                # Intropsection V2 - Add Optimized System Instruction
+                # reflection_data = AgentInput(
+                #     data_intelligence=introspection_director.introspections[-lookback:], 
+                #     system_instructions_history=introspection_director.metadata_suggestions[-lookback:], 
+                #     overall_quality_score=introspection_director.overall_quality_score[-lookback:], 
+                # )
+
+                ai_suggestion: AISuggestion = introspsective_agent.introspect_v3(introspection_director)
+                ai_suggestion.optimization_id = i
                 introspection_director.add_ai_suggestion(ai_suggestion)
+                #intropsection_director.introspections[-1].system_instruction = ai_suggestion
 
                 # 📝 MLFlow Logging of Optimization Loop tags
                 # with mlflow.start_run(experiment_id=parent_run.info.experiment_id, run_id=exp_run.info.run_id):

@@ -1,12 +1,12 @@
 from dataclasses import dataclass, field, asdict
-from typing import Optional, Literal, Self, Dict, Any
+from typing import Optional, Literal, Dict, Any, List
 from dotenv import dotenv_values
 from databricks.connect import DatabricksSession
 import pyspark
 from chaosllama.profiles.config import config
 from pyspark.sql import functions as F
 from datetime import datetime
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 import pandas as pd
 from mlflow.entities import Feedback
 from databricks.connect import DatabricksSession
@@ -106,7 +106,8 @@ class SuggestionUpdate:
 class AgentSuggestion:
     content: str
     type: Literal["system_instructions", "column_description", "data_model"]
-    creation_tm: datetime = field(default_factory=datetime.now)
+    optimization_id: int
+    #creation_tm: datetime = field(default_factory=datetime.now)
 
 
 @dataclass
@@ -115,13 +116,6 @@ class AgentConfig:
     endpoint: str
     llm_parameters: dict = field(default_factory=lambda: {"temperature": 0.00})
 
-@dataclass
-class AgentInput:
-    quality_threshold: float
-    data_intelligence: list = field(default_factory=list)
-    overall_quality_score: list = field(default_factory=list)
-    system_instructions_history: list = field(default_factory=list)
-    optimization_id: int = field(default_factory=int)
 
 
 @dataclass
@@ -146,13 +140,6 @@ class DspyFeedback:
     score: float
     feedback: str
 
-# @dataclass
-# class DataIntelligence:
-#     question: str
-#     genie_generated_query: str
-#     ground_truth_query: str
-#     genie_generated_sql_thought_process_description: str
-#     mosaic_evaluation: list[MosaicAssessment]
 
 @dataclass
 class DataIntelligence:
@@ -187,73 +174,127 @@ class ChaosFeedback:
     value: str | float
 
 
+@dataclass
+class AISuggestion:
+    ai_system_instruction: Optional[str] = None
+    column_description: Optional[str] = None
+    data_model: Optional[str] = None
 
 @dataclass
-class IntrospectionManager:
-    genie_telemetry: list[GenieTelemetry] = field(default_factory=list)
-    introspections: list[dict] = field(default_factory=list)
-    metadata_suggestions: list[AgentSuggestion] = field(default_factory=list)
-    data_intelligence: list[DataIntelligence] = field(default_factory=list)
-    feedback: list[Feedback] = field(default_factory=list)
-    overall_quality_score: list[dict] = field(default_factory=list)
+class Introspection:
+    feedback: List[ChaosFeedback] = field(default_factory=list)
+    overall_quality_score:dict= field(default_factory=list)
+    optimization_id:int=field(default_factory=int)
+    suggestion: Optional[AISuggestion] = None
+
+@dataclass
+class AgentInput:
+    quality_threshold: float = .90  # TODO: Pull from config
+    data_intelligence: List[ChaosFeedback] = field(default_factory=list)
+    overall_quality_score: list = field(default_factory=list)
+    system_instructions_history: list = field(default_factory=list)
     optimization_id: int = field(default_factory=int)
 
-    def add_genie_telemetry(self, telemetry: GenieTelemetry):
-        self.genie_telemetry.append(telemetry)
+@dataclass
+class ReflectionData:
+    introspections: List[Introspection] = field(default_factory=list)
+    system_instructions_history: list[str] = field(default_factory=list)
+
+@dataclass
+class ReflectionOutput:
+    ai_system_instruction: str #"The optimized system prompt after evaluating the data intelligence"
+
+
+
+
+@dataclass
+class IntrospectionManager_v2:
+    introspections: list[Introspection] = field(default_factory=list)
+    system_instructions_history: list[AISuggestion] = field(default_factory=list)
+
+    def add_introspection(self, introspection: Introspection):
+        self.introspections.append(introspection)
+        return self
+    
+    def add_system_instructions_history(self, system_instruction_history: str):
+        self.system_instructions_history.append(system_instruction_history)
+        return self
+    
+    def add_ai_suggestion(self, suggestion: AISuggestion):
+        self.system_instructions_history.append(suggestion)
         return self
 
-    def add_feedback(self, feedback: Feedback):
-        self.feedback.append(feedback)
-        return self
+# @dataclass
+# class IntrospectionManager:
+#     genie_telemetry: list[GenieTelemetry] = field(default_factory=list)
+#     introspections: list[Introspection] = field(default_factory=list)
+#     metadata_suggestions: list[AgentSuggestion] = field(default_factory=list)
+#     data_intelligence: list[DataIntelligence] = field(default_factory=list)
+#     feedback: list[ChaosFeedback] = field(default_factory=list)
+#     overall_quality_score: list[dict] = field(default_factory=list)
+#     optimization_id: int = field(default_factory=int)
+#     system_instructions_history: list[str] = field(default_factory=list)
 
-    def add_introspection(self, introspection: dict):
-        self.instrospections.append(introspection)
-        return self
+#     def add_genie_telemetry(self, telemetry: GenieTelemetry):
+#         self.genie_telemetry.append(telemetry)
+#         return self
+    
+#     def add_metadata_suggestions(self, suggestion: AgentSuggestion):
+#         self.metadata_suggestions.append(suggestion)
+#         return self
 
-    def add_ai_suggestion(self, suggestion: AgentSuggestion):
-        self.metadata_suggestions.append(suggestion)
-        return self
+#     def add_feedback(self, feedback: ChaosFeedback):
+#         self.feedback.append(feedback)
+#         return self
 
-    def add_data_intelligence(self, data_intelligence: list[DataIntelligence]):
-        self.data_intelligence.extend(data_intelligence)
-        return self
+#     def add_introspection(self, introspection: dict):
+#         self.introspections.append(introspection)
+#         return self
 
-    def add_overall_quality_score(self, score: dict):
-        self.overall_quality_score.append(score)
+#     def add_ai_suggestion(self, suggestion: AgentSuggestion):
+#         self.metadata_suggestions.append(suggestion)
+#         return self
 
-    def get_prev_quality_score(self):
-        try:
-            return self.overall_quality_score[-2]
-        except IndexError:
-            return None
+#     def add_data_intelligence(self, data_intelligence: list[DataIntelligence]):
+#         self.data_intelligence.extend(data_intelligence)
+#         return self
 
-    def get_curr_quality_score(self):
-        return self.overall_quality_score[-1]
+#     def add_overall_quality_score(self, score: dict):
+#         self.overall_quality_score.append(score)
 
-    def get_prev_ai_prompt(self):
-        try:
-            if len(self.metadata_suggestions) > 2:
-                return self.metadata_suggestions[-2]
-            else:
-                return self.metadata_suggestions[-1]
-        except IndexError:
-            return None
+#     def get_prev_quality_score(self):
+#         try:
+#             return self.overall_quality_score[-2]
+#         except IndexError:
+#             return None
 
-    def get_curr_ai_prompt(self):
-        sys_prompt = self.metadata_suggestions[-1] if self.metadata_suggestions else None
-        return sys_prompt
+#     def get_curr_quality_score(self):
+#         return self.overall_quality_score[-1]
 
-    def get_prev_intelligence(self):
-        try:
-            return self.data_intelligence[-2]
-        except IndexError:
-            return None
+#     def get_prev_ai_prompt(self):
+#         try:
+#             if len(self.metadata_suggestions) > 2:
+#                 return self.metadata_suggestions[-2]
+#             else:
+#                 return self.metadata_suggestions[-1]
+#         except IndexError:
+#             return None
 
-    def get_curr_intelligence(self):
-        return self.data_intelligence[-1] if self.data_intelligence else None
+#     def get_curr_ai_prompt(self):
+#         sys_prompt = self.metadata_suggestions[-1] if self.metadata_suggestions else None
+#         return sys_prompt
 
-    def as_dict(self):
-        return asdict(self)
+#     def get_prev_intelligence(self):
+#         try:
+#             return self.data_intelligence[-2]
+#         except IndexError:
+#             return None
+
+#     def get_curr_intelligence(self):
+#         return self.data_intelligence[-1] if self.data_intelligence else None
+
+#     def as_dict(self):
+#         return asdict(self)
 
 
 # ====================================================================
@@ -302,7 +343,6 @@ class DDLHistoryTable(ChaosLlamaTable):
 
 
 
-
 @dataclass
 class IntrospectionManager:
     introspections: list[dict] = field(default_factory=list)
@@ -316,15 +356,17 @@ class IntrospectionManager:
         return self
 
     def add_introspection(self, introspection: dict):
-        self.instrospections.append(introspection)
+        self.introspections.append(introspection)
         return self
 
     def add_ai_suggestion(self, suggestion: AgentSuggestion):
         self.metadata_suggestions.append(suggestion)
         return self
 
-    def add_overall_quality_score(self, score: dict):
+    def add_overall_quality_score(self, score: dict, optimization_id=None):
+        score["optimization_id"] = optimization_id
         self.overall_quality_score.append(score)
+        return self
 
     def get_prev_quality_score(self):
         try:
@@ -377,27 +419,32 @@ class EvalSetTable(ChaosLlamaTable):
     def get_questions(self, limit=None):
         return self.data.toPandas()[["question", "original_question"]].values
 
-    def update_ground_truth(self, replace_terms: dict) -> Self:
+    def update_ground_truth(self, replace_terms: dict):
         for source, target in replace_terms.items():
             regex_replace = F.regexp_replace("ground_truth_query", source, target)
             self.data = self.data.withColumn("updated_ground_truth", regex_replace)
         return self
 
-    def limit(self, limit=None) -> Self:
+    def limit(self, limit=None):
         if limit and isinstance(self.data, pyspark.sql.DataFrame):
             self.data = self.data.limit(limit)
         elif limit and isinstance(self.data, pd.DataFrame):
             self.data = self.data.head(limit)
         return self
 
-    def filter(self, filter_str: str) -> Self:
-        if isinstance(self.data, pyspark.sql.DataFrame):
+    def filter(self, filter_str: str):
+        if (isinstance(self.data, pyspark.sql.DataFrame)
+            or 
+            isinstance(self.data, pyspark.sql.connect.dataframe.DataFrame)
+            ):
             self.data = self.data.filter(filter_str)
         elif isinstance(self.data, pd.DataFrame):
             raise NotImplementedError("Filtering is not supported for pandas DataFrames.")
+        else:
+            raise NotImplementedError("Filtering is not supported for the given data type.")
         return self
 
-    def replicate_rows(self, consistency_factor: int = 1) -> Self:
+    def replicate_rows(self, consistency_factor: int = 1):
         """
         Duplicate each row in the given DataFrame `n` times.
 

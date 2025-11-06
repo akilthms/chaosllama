@@ -18,9 +18,11 @@ class GenieConfig(BaseModel):
 
 
 
+
+
 class RuntimeConfig(BaseModel):
     MAX_TOKENS: int
-    LIMIT: int
+    LIMIT: int | None
     CONSISTENCY_FACTOR: int
     EPOCHS: int
     BATCH_SIZE: int
@@ -34,6 +36,8 @@ class RuntimeConfig(BaseModel):
     DEBUG: bool
     IS_TRIGGERED_FROM_CHECKPOINT: bool
     INTROSPECT_AGENT_LLM_ENDPOINT: str
+    JUDGE_ENDPOINT: str
+    JUDGE_VERSION: str
     BASELINE_CATALOG: str
     BASELINE_SCHEMA: str
     IS_CACHED: bool
@@ -56,6 +60,7 @@ class Config(BaseModel):
     genie: GenieConfig
     runtime: RuntimeConfig
     scorers: ScorerConfig
+    judges: dict
 
 
 

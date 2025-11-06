@@ -158,3 +158,14 @@ def eval_query_results(inputs: dict, outputs: dict, expectations: Optional[dict[
         value=_value,
         rationale=rationale_logic
     )
+
+
+
+
+
+
+
+
+
+
+
