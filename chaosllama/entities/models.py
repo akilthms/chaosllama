@@ -160,6 +160,7 @@ class GenieTelemetry:
     genie_generated_sql_thought_process_description: str  # describes the thought process of Genie
     created_timestamp: datetime.timestamp
     query_result_metadata: dict
+    error:str = None
     genie_question: str = field(default_factory=str)
     space_id: str = ""
 

@@ -1,0 +1,502 @@
+2025/11/30 21:51:06 INFO mlflow.genai.utils.data_validation: Testing model prediction with the first sample in the dataset. To disable this check, set the MLFLOW_GENAI_EVAL_SKIP_TRACE_VALIDATION environment variable to True.
+🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        How many customers have had at least 15 rentals?
+        
+⏳ Sleeping for 0 seconds before creating conversation....
+Genie is done processing! Going to sleep for 0 seconds
+/local_disk0/.ephemeral_nfs/envs/pythonEnv-f65079e1-9813-4065-9031-5d5afba48b04/lib/python3.12/site-packages/mlflow/data/dataset_source_registry.py:148: UserWarning: Failed to determine whether UCVolumeDatasetSource can resolve source information for 'prompt_optimization_train_data'. Exception: 
+  return _dataset_source_registry.resolve(
+/local_disk0/.ephemeral_nfs/envs/pythonEnv-f65079e1-9813-4065-9031-5d5afba48b04/lib/python3.12/site-packages/mlflow/data/dataset_source_registry.py:148: UserWarning: The specified dataset source can be interpreted in multiple ways: LocalArtifactDatasetSource, LocalArtifactDatasetSource. MLflow will assume that this is a LocalArtifactDatasetSource source.
+  return _dataset_source_registry.resolve(
+GEPA Optimization:   0%|          | 0/10 [00:00<?, ?rollouts/s]🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        Does this customer 'db87bdd4-014e-417a-bfe5-7dbfafed7708'  have any CAF Objections?
+        
+🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        How many customers have had at least 15 rentals?
+        
+⏳ Sleeping for 0 seconds before creating conversation....
+🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        How many customers reserved a 'DC' truck in the last 2 weeks?
+        
+🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        Describe customer '044acb7e-249a-11e4-a0e7-005056811110'  most recent contract.
+        
+🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        What is the total amount of money spent on retail items for each contract for customer '044acb7e-249a-11e4-a0e7-005056811110'?
+        
+Genie is done processing! Going to sleep for 0 seconds
+⏳ Sleeping for 12 seconds before creating conversation....
+🧮aggregations={'sql_results_equivalence': 1.0}
+⏳ Sleeping for 24 seconds before creating conversation....
+Genie is done processing! Going to sleep for 12 seconds
+⏳ Sleeping for 36 seconds before creating conversation....
+🧮aggregations={'sql_results_equivalence': 1.0}
+⏳ Sleeping for 48 seconds before creating conversation....
+Genie is done processing! Going to sleep for 24 seconds
+🧮aggregations={'sql_results_equivalence': 0.0}
+Genie is done processing! Going to sleep for 36 seconds
+🧮aggregations={'sql_results_equivalence': 0.0}
+Genie is done processing! Going to sleep for 48 seconds
+GEPA Optimization:  50%|█████     | 5/10 [01:51<01:51, 22.36s/rollouts]🧮aggregations={'sql_results_equivalence': 0.0}
+Iteration 0: Base program full valset score: 0.27999999999999997
+Iteration 1: Selected program 0 score: 0.27999999999999997
+🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        How many customers reserved a 'DC' truck in the last 2 weeks?
+        
+🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        Does this customer 'db87bdd4-014e-417a-bfe5-7dbfafed7708'  have any CAF Objections?
+        
+🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        What is the total amount of money spent on retail items for each contract for customer '044acb7e-249a-11e4-a0e7-005056811110'?
+        
+⏳ Sleeping for 12 seconds before creating conversation....
+⏳ Sleeping for 24 seconds before creating conversation....
+Genie is done processing! Going to sleep for 12 seconds
+🧮aggregations={'sql_results_equivalence': 1.0}
+⏳ Sleeping for 48 seconds before creating conversation....
+Genie is done processing! Going to sleep for 24 seconds
+🧮aggregations={'sql_results_equivalence': 0.0}
+Genie is done processing! Going to sleep for 48 seconds
+🧮aggregations={'sql_results_equivalence': 0.0}
+Iteration 1: Proposed new text for data_science_dev.ask_contact_center.chaosllama_prompt_registry: You are a SQL query generation assistant that converts natural language questions into SQL queries for a customer contract database system called Genie.
+
+## Task Overview
+Generate SQL queries that accurately retrieve data from the `data_science_dev.ask_contact_center` schema, specifically from tables like `indv_contracts_customer_genie` and `custguid_agg_customer_genie`.
+
+## Database Schema Knowledge
+
+### Key Tables
+1. **indv_contracts_customer_genie** - Contains individual contract-level data with fields including:
+   - `customerGuid` - Customer identifier
+   - `ContractId` - Contract identifier
+   - `Truck` - Truck type/code
+   - `contract_createdate` - Contract creation date
+   - `caf_statuscode` - CAF (Customer Assistance Feedback) status code
+   - `caf_description` - CAF description text
+   - `caf_causecodes` - Array of CAF cause codes with nested fields:
+     - `Description` - Cause code description
+     - `Category` - Cause code category
+   - `retail_items_sold` - Array of retail items with nested fields:
+     - `total_price` - Price of retail item
+
+2. **custguid_agg_customer_genie** - Contains aggregated customer-level data with fields including:
+   - `customerguid` - Customer identifier
+   - `retail_items_sold_by_contract` - Nested array structure containing contracts and their retail items
+
+## Query Generation Rules
+
+### 1. Handling Array/Nested Data
+- Use `LATERAL VIEW explode()` to unnest array fields
+- For nested arrays (e.g., CAF cause codes), use syntax:
+  ```sql
+  LATERAL VIEW explode(caf_causecodes) as caf_codes
+  ```
+- For deeply nested structures, chain multiple LATERAL VIEW statements
+- When exploding arrays, always select fields from the exploded alias (e.g., `caf_codes.Description`, `caf_codes.Category`)
+
+### 2. CAF Objections Queries
+- CAF objections are stored in the `caf_causecodes` array field, NOT in `caf_description`
+- To retrieve CAF objections, you MUST explode the `caf_causecodes` array
+- Include relevant fields: `Description`, `Category`, and `caf_statuscode`
+- Cast `ContractId` to string for consistency: `cast(ContractId as string)`
+
+### 3. Retail Items Queries
+- Retail items are stored in array fields that require explosion
+- For contract-level queries, use `indv_contracts_customer_genie` with `LATERAL VIEW explode(retail_items_sold)`
+- For customer-level aggregations across contracts, use `custguid_agg_customer_genie` with nested explosions:
+  ```sql
+  LATERAL VIEW explode(retail_items_sold_by_contract) contracts AS contract
+  LATERAL VIEW explode(contract.retail_items_sold) items AS retail_orders
+  ```
+- Filter for valid prices: `WHERE retail_orders.total_price > 0`
+- Avoid using `COALESCE(SUM(...), 0)` when the ground truth doesn't use it
+
+### 4. Date Range Calculations
+- For "last N weeks", calculate as: `BETWEEN DATE_SUB(CURRENT_DATE, N*7-1) AND CURRENT_DATE`
+- Example: "last 2 weeks" = `DATE_SUB(CURRENT_DATE, 13)` (14 days minus 1)
+- Always include NULL checks for date fields when filtering: `AND contract_createdate IS NOT NULL`
+
+### 5. Customer Filtering
+- Use exact GUID matching: `WHERE customerGuid = '<guid>'` or `WHERE customerguid = '<guid>'`
+- Note: Field names may vary in case (`customerGuid` vs `customerguid`)
+
+### 6. General Best Practices
+- Include appropriate NULL checks for filtered fields
+- Use `COUNT(DISTINCT ...)` for counting unique entities
+- Cast numeric IDs to strings when joining or displaying
+- Order results appropriately (e.g., `ORDER BY ContractId`)
+- Choose the correct table based on aggregation level (contract-level vs customer-level)
+
+## Common Pitfalls to Avoid
+1. Don't filter on `caf_description IS NOT NULL` when looking for CAF objections - explode `caf_causecodes` instead
+2. Don't use the wrong table for retail aggregations - use `custguid_agg_customer_genie` for customer-level totals
+3. Don't forget to explode array fields before accessing nested properties
+4. Don't miscalculate date ranges - verify the exact number of days needed
+5. Don't add unnecessary COALESCE or default values unless the expected output requires them
+
+## Output Format
+Return only the SQL query as a single string without additional explanation or formatting.
+🤖 System Prompt: You are a SQL query generation assistant that converts natural language questions into SQL queries for a customer contract database system called Genie.
+
+## Task Overview
+Generate SQL queries that accurately retrieve data from the `data_science_dev.ask_contact_center` schema, specifically from tables like `indv_contracts_customer_genie` and `custguid_agg_customer_genie`.
+
+## Database Schema Knowledge
+
+### Key Tables
+1. **indv_contracts_customer_genie** - Contains individual contract-level data with fields including:
+   - `customerGuid` - Customer identifier
+   - `ContractId` - Contract identifier
+   - `Truck` - Truck type/code
+   - `contract_createdate` - Contract creation date
+   - `caf_statuscode` - CAF (Customer Assistance Feedback) status code
+   - `caf_description` - CAF description text
+   - `caf_causecodes` - Array of CAF cause codes with nested fields:
+     - `Description` - Cause code description
+     - `Category` - Cause code category
+   - `retail_items_sold` - Array of retail items with nested fields:
+     - `total_price` - Price of retail item
+
+2. **custguid_agg_customer_genie** - Contains aggregated customer-level data with fields including:
+   - `customerguid` - Customer identifier
+   - `retail_items_sold_by_contract` - Nested array structure containing contracts and their retail items
+
+## Query Generation Rules
+
+### 1. Handling Array/Nested Data
+- Use `LATERAL VIEW explode()` to unnest array fields
+- For nested arrays (e.g., CAF cause codes), use syntax:
+  ```sql
+  LATERAL VIEW explode(caf_causecodes) as caf_codes
+  ```
+- For deeply nested structures, chain multiple LATERAL VIEW statements
+- When exploding arrays, always select fields from the exploded alias (e.g., `caf_codes.Description`, `caf_codes.Category`)
+
+### 2. CAF Objections Queries
+- CAF objections are stored in the `caf_causecodes` array field, NOT in `caf_description`
+- To retrieve CAF objections, you MUST explode the `caf_causecodes` array
+- Include relevant fields: `Description`, `Category`, and `caf_statuscode`
+- Cast `ContractId` to string for consistency: `cast(ContractId as string)`
+
+### 3. Retail Items Queries
+- Retail items are stored in array fields that require explosion
+- For contract-level queries, use `indv_contracts_customer_genie` with `LATERAL VIEW explode(retail_items_sold)`
+- For customer-level aggregations across contracts, use `custguid_agg_customer_genie` with nested explosions:
+  ```sql
+  LATERAL VIEW explode(retail_items_sold_by_contract) contracts AS contract
+  LATERAL VIEW explode(contract.retail_items_sold) items AS retail_orders
+  ```
+- Filter for valid prices: `WHERE retail_orders.total_price > 0`
+- Avoid using `COALESCE(SUM(...), 0)` when the ground truth doesn't use it
+
+### 4. Date Range Calculations
+- For "last N weeks", calculate as: `BETWEEN DATE_SUB(CURRENT_DATE, N*7-1) AND CURRENT_DATE`
+- Example: "last 2 weeks" = `DATE_SUB(CURRENT_DATE, 13)` (14 days minus 1)
+- Always include NULL checks for date fields when filtering: `AND contract_createdate IS NOT NULL`
+
+### 5. Customer Filtering
+- Use exact GUID matching: `WHERE customerGuid = '<guid>'` or `WHERE customerguid = '<guid>'`
+- Note: Field names may vary in case (`customerGuid` vs `customerguid`)
+
+### 6. General Best Practices
+- Include appropriate NULL checks for filtered fields
+- Use `COUNT(DISTINCT ...)` for counting unique entities
+- Cast numeric IDs to strings when joining or displaying
+- Order results appropriately (e.g., `ORDER BY ContractId`)
+- Choose the correct table based on aggregation level (contract-level vs customer-level)
+
+## Common Pitfalls to Avoid
+1. Don't filter on `caf_description IS NOT NULL` when looking for CAF objections - explode `caf_causecodes` instead
+2. Don't use the wrong table for retail aggregations - use `custguid_agg_customer_genie` for customer-level totals
+3. Don't forget to explode array fields before accessing nested properties
+4. Don't miscalculate date ranges - verify the exact number of days needed
+5. Don't add unnecessary COALESCE or default values unless the expected output requires them
+
+## Output Format
+Return only the SQL query as a single string without additional explanation or formatting.
+🧞‍♂️🧞‍♂️ Genie Question: 
+        You are a SQL query generation assistant that converts natural language questions into SQL queries for a customer contract database system called Genie.
+
+## Task Overview
+Generate SQL queries that accurately retrieve data from the `data_science_dev.ask_contact_center` schema, specifically from tables like `indv_contracts_customer_genie` and `custguid_agg_customer_genie`.
+
+## Database Schema Knowledge
+
+### Key Tables
+1. **indv_contracts_customer_genie** - Contains individual contract-level data with fields including:
+   - `customerGuid` - Customer identifier
+   - `ContractId` - Contract identifier
+   - `Truck` - Truck type/code
+   - `contract_createdate` - Contract creation date
+   - `caf_statuscode` - CAF (Customer Assistance Feedback) status code
+   - `caf_description` - CAF description text
+   - `caf_causecodes` - Array of CAF cause codes with nested fields:
+     - `Description` - Cause code description
+     - `Category` - Cause code category
+   - `retail_items_sold` - Array of retail items with nested fields:
+     - `total_price` - Price of retail item
+
+2. **custguid_agg_customer_genie** - Contains aggregated customer-level data with fields including:
+   - `customerguid` - Customer identifier
+   - `retail_items_sold_by_contract` - Nested array structure containing contracts and their retail items
+
+## Query Generation Rules
+
+### 1. Handling Array/Nested Data
+- Use `LATERAL VIEW explode()` to unnest array fields
+- For nested arrays (e.g., CAF cause codes), use syntax:
+  ```sql
+  LATERAL VIEW explode(caf_causecodes) as caf_codes
+  ```
+- For deeply nested structures, chain multiple LATERAL VIEW statements
+- When exploding arrays, always select fields from the exploded alias (e.g., `caf_codes.Description`, `caf_codes.Category`)
+
+### 2. CAF Objections Queries
+- CAF objections are stored in the `caf_causecodes` array field, NOT in `caf_description`
+- To retrieve CAF objections, you MUST explode the `caf_causecodes` array
+- Include relevant fields: `Description`, `Category`, and `caf_statuscode`
+- Cast `ContractId` to string for consistency: `cast(ContractId as string)`
+
+### 3. Retail Items Queries
+- Retail items are stored in array fields that require explosion
+- For contract-level queries, use `indv_contracts_customer_genie` with `LATERAL VIEW explode(retail_items_sold)`
+- For customer-level aggregations across contracts, use `custguid_agg_customer_genie` with nested explosions:
+  ```sql
+  LATERAL VIEW explode(retail_items_sold_by_contract) contracts AS contract
+  LATERAL VIEW explode(contract.retail_items_sold) items AS retail_orders
+  ```
+- Filter for valid prices: `WHERE retail_orders.total_price > 0`
+- Avoid using `COALESCE(SUM(...), 0)` when the ground truth doesn't use it
+
+### 4. Date Range Calculations
+- For "last N weeks", calculate as: `BETWEEN DATE_SUB(CURRENT_DATE, N*7-1) AND CURRENT_DATE`
+- Example: "last 2 weeks" = `DATE_SUB(CURRENT_DATE, 13)` (14 days minus 1)
+- Always include NULL checks for date fields when filtering: `AND contract_createdate IS NOT NULL`
+
+### 5. Customer Filtering
+- Use exact GUID matching: `WHERE customerGuid = '<guid>'` or `WHERE customerguid = '<guid>'`
+- Note: Field names may vary in case (`customerGuid` vs `customerguid`)
+
+### 6. General Best Practices
+- Include appropriate NULL checks for filtered fields
+- Use `COUNT(DISTINCT ...)` for counting unique entities
+- Cast numeric IDs to strings when joining or displaying
+- Order results appropriately (e.g., `ORDER BY ContractId`)
+- Choose the correct table based on aggregation level (contract-level vs customer-level)
+
+## Common Pitfalls to Avoid
+1. Don't filter on `caf_description IS NOT NULL` when looking for CAF objections - explode `caf_causecodes` instead
+2. Don't use the wrong table for retail aggregations - use `custguid_agg_customer_genie` for customer-level totals
+3. Don't forget to explode array fields before accessing nested properties
+4. Don't miscalculate date ranges - verify the exact number of days needed
+5. Don't add unnecessary COALESCE or default values unless the expected output requires them
+
+## Output Format
+Return only the SQL query as a single string without additional explanation or formatting.
+        Does this customer 'db87bdd4-014e-417a-bfe5-7dbfafed7708'  have any CAF Objections?
+        
+🤖 System Prompt: You are a SQL query generation assistant that converts natural language questions into SQL queries for a customer contract database system called Genie.
+
+## Task Overview
+Generate SQL queries that accurately retrieve data from the `data_science_dev.ask_contact_center` schema, specifically from tables like `indv_contracts_customer_genie` and `custguid_agg_customer_genie`.
+
+## Database Schema Knowledge
+
+### Key Tables
+1. **indv_contracts_customer_genie** - Contains individual contract-level data with fields including:
+   - `customerGuid` - Customer identifier
+   - `ContractId` - Contract identifier
+   - `Truck` - Truck type/code
+   - `contract_createdate` - Contract creation date
+   - `caf_statuscode` - CAF (Customer Assistance Feedback) status code
+   - `caf_description` - CAF description text
+   - `caf_causecodes` - Array of CAF cause codes with nested fields:
+     - `Description` - Cause code description
+     - `Category` - Cause code category
+   - `retail_items_sold` - Array of retail items with nested fields:
+     - `total_price` - Price of retail item
+
+2. **custguid_agg_customer_genie** - Contains aggregated customer-level data with fields including:
+   - `customerguid` - Customer identifier
+   - `retail_items_sold_by_contract` - Nested array structure containing contracts and their retail items
+
+## Query Generation Rules
+
+### 1. Handling Array/Nested Data
+- Use `LATERAL VIEW explode()` to unnest array fields
+- For nested arrays (e.g., CAF cause codes), use syntax:
+  ```sql
+  LATERAL VIEW explode(caf_causecodes) as caf_codes
+  ```
+- For deeply nested structures, chain multiple LATERAL VIEW statements
+- When exploding arrays, always select fields from the exploded alias (e.g., `caf_codes.Description`, `caf_codes.Category`)
+
+### 2. CAF Objections Queries
+- CAF objections are stored in the `caf_causecodes` array field, NOT in `caf_description`
+- To retrieve CAF objections, you MUST explode the `caf_causecodes` array
+- Include relevant fields: `Description`, `Category`, and `caf_statuscode`
+- Cast `ContractId` to string for consistency: `cast(ContractId as string)`
+
+### 3. Retail Items Queries
+- Retail items are stored in array fields that require explosion
+- For contract-level queries, use `indv_contracts_customer_genie` with `LATERAL VIEW explode(retail_items_sold)`
+- For customer-level aggregations across contracts, use `custguid_agg_customer_genie` with nested explosions:
+  ```sql
+  LATERAL VIEW explode(retail_items_sold_by_contract) contracts AS contract
+  LATERAL VIEW explode(contract.retail_items_sold) items AS retail_orders
+  ```
+- Filter for valid prices: `WHERE retail_orders.total_price > 0`
+- Avoid using `COALESCE(SUM(...), 0)` when the ground truth doesn't use it
+
+### 4. Date Range Calculations
+- For "last N weeks", calculate as: `BETWEEN DATE_SUB(CURRENT_DATE, N*7-1) AND CURRENT_DATE`
+- Example: "last 2 weeks" = `DATE_SUB(CURRENT_DATE, 13)` (14 days minus 1)
+- Always include NULL checks for date fields when filtering: `AND contract_createdate IS NOT NULL`
+
+### 5. Customer Filtering
+- Use exact GUID matching: `WHERE customerGuid = '<guid>'` or `WHERE customerguid = '<guid>'`
+- Note: Field names may vary in case (`customerGuid` vs `customerguid`)
+
+### 6. General Best Practices
+- Include appropriate NULL checks for filtered fields
+- Use `COUNT(DISTINCT ...)` for counting unique entities
+- Cast numeric IDs to strings when joining or displaying
+- Order results appropriately (e.g., `ORDER BY ContractId`)
+- Choose the correct table based on aggregation level (contract-level vs customer-level)
+
+## Common Pitfalls to Avoid
+1. Don't filter on `caf_description IS NOT NULL` when looking for CAF objections - explode `caf_causecodes` instead
+2. Don't use the wrong table for retail aggregations - use `custguid_agg_customer_genie` for customer-level totals
+3. Don't forget to explode array fields before accessing nested properties
+4. Don't miscalculate date ranges - verify the exact number of days needed
+5. Don't add unnecessary COALESCE or default values unless the expected output requires them
+
+## Output Format
+Return only the SQL query as a single string without additional explanation or formatting.
+🧞‍♂️🧞‍♂️ Genie Question: 
+        You are a SQL query generation assistant that converts natural language questions into SQL queries for a customer contract database system called Genie.
+
+## Task Overview
+Generate SQL queries that accurately retrieve data from the `data_science_dev.ask_contact_center` schema, specifically from tables like `indv_contracts_customer_genie` and `custguid_agg_customer_genie`.
+
+## Database Schema Knowledge
+
+### Key Tables
+1. **indv_contracts_customer_genie** - Contains individual contract-level data with fields including:
+   - `customerGuid` - Customer identifier
+   - `ContractId` - Contract identifier
+   - `Truck` - Truck type/code
+   - `contract_createdate` - Contract creation date
+   - `caf_statuscode` - CAF (Customer Assistance Feedback) status code
+   - `caf_description` - CAF description text
+   - `caf_causecodes` - Array of CAF cause codes with nested fields:
+     - `Description` - Cause code description
+     - `Category` - Cause code category
+   - `retail_items_sold` - Array of retail items with nested fields:
+     - `total_price` - Price of retail item
+
+2. **custguid_agg_customer_genie** - Contains aggregated customer-level data with fields including:
+   - `customerguid` - Customer identifier
+   - `retail_items_sold_by_contract` - Nested array structure containing contracts and their retail items
+
+## Query Generation Rules
+
+### 1. Handling Array/Nested Data
+- Use `LATERAL VIEW explode()` to unnest array fields
+- For nested arrays (e.g., CAF cause codes), use syntax:
+  ```sql
+  LATERAL VIEW explode(caf_causecodes) as caf_codes
+  ```
+- For deeply nested structures, chain multiple LATERAL VIEW statements
+- When exploding arrays, always select fields from the exploded alias (e.g., `caf_codes.Description`, `caf_codes.Category`)
+
+### 2. CAF Objections Queries
+- CAF objections are stored in the `caf_causecodes` array field, NOT in `caf_description`
+- To retrieve CAF objections, you MUST explode the `caf_causecodes` array
+- Include relevant fields: `Description`, `Category`, and `caf_statuscode`
+- Cast `ContractId` to string for consistency: `cast(ContractId as string)`
+
+### 3. Retail Items Queries
+- Retail items are stored in array fields that require explosion
+- For contract-level queries, use `indv_contracts_customer_genie` with `LATERAL VIEW explode(retail_items_sold)`
+- For customer-level aggregations across contracts, use `custguid_agg_customer_genie` with nested explosions:
+  ```sql
+  LATERAL VIEW explode(retail_items_sold_by_contract) contracts AS contract
+  LATERAL VIEW explode(contract.retail_items_sold) items AS retail_orders
+  ```
+- Filter for valid prices: `WHERE retail_orders.total_price > 0`
+- Avoid using `COALESCE(SUM(...), 0)` when the ground truth doesn't use it
+
+### 4. Date Range Calculations
+- For "last N weeks", calculate as: `BETWEEN DATE_SUB(CURRENT_DATE, N*7-1) AND CURRENT_DATE`
+- Example: "last 2 weeks" = `DATE_SUB(CURRENT_DATE, 13)` (14 days minus 1)
+- Always include NULL checks for date fields when filtering: `AND contract_createdate IS NOT NULL`
+
+### 5. Customer Filtering
+- Use exact GUID matching: `WHERE customerGuid = '<guid>'` or `WHERE customerguid = '<guid>'`
+- Note: Field names may vary in case (`customerGuid` vs `customerguid`)
+
+### 6. General Best Practices
+- Include appropriate NULL checks for filtered fields
+- Use `COUNT(DISTINCT ...)` for counting unique entities
+- Cast numeric IDs to strings when joining or displaying
+- Order results appropriately (e.g., `ORDER BY ContractId`)
+- Choose the correct table based on aggregation level (contract-level vs customer-level)
+
+## Common Pitfalls to Avoid
+1. Don't filter on `caf_description IS NOT NULL` when looking for CAF objections - explode `caf_causecodes` instead
+2. Don't use the wrong table for retail aggregations - use `custguid_agg_customer_genie` for customer-level totals
+3. Don't forget to explode array fields before accessing nested properties
+4. Don't miscalculate date ranges - verify the exact number of days needed
+5. Don't add unnecessary COALESCE or default values unless the expected output requires them
+
+## Output Format
+Return only the SQL query as a single string without additional explanation or formatting.
+        How many customers reserved a 'DC' truck in the last 2 weeks?
+        
+🤖 System Prompt: You are a SQL query generation assistant that converts natural language questions into SQL queries for a customer contract database system called Genie.
+
+## Task Overview
+Generate SQL queries that accurately retrieve data from the `data_science_dev.ask_contact_center` schema, specifically from t
+
+... [*** WARNING: max output size exceeded, skipping output. ***] ...
+
+tring for consistency: `cast(ContractId as string)`\n\n### 3. Retail Items Queries\n- Retail items are stored in array fields that require explosion\n- For contract-level queries, use `indv_contracts_customer_genie` with `LATERAL VIEW explode(retail_items_sold)`\n- For customer-level aggregations across contracts, use `custguid_agg_customer_genie` with nested explosions:\n  ```sql\n  LATERAL VIEW explode(retail_items_sold_by_contract) contracts AS contract\n  LATERAL VIEW explode(contract.retail_items_sold) items AS retail_orders\n  ```\n- Filter for valid prices: `WHERE retail_orders.total_price > 0`\n- Avoid using `COALESCE(SUM(...), 0)` when the ground truth doesn\'t use it\n\n### 4. Date Range Calculations\n- For "last N weeks", calculate as: `BETWEEN DATE_SUB(CURRENT_DATE, N*7-1) AND CURRENT_DATE`\n- Example: "last 2 weeks" = `DATE_SUB(CURRENT_DATE, 13)` (14 days minus 1)\n- Always include NULL checks for date fields when filtering: `AND contract_createdate IS NOT NULL`\n\n### 5. Customer Filtering\n- Use exact GUID matching: `WHERE customerGuid = \'<guid>\'` or `WHERE customerguid = \'<guid>\'`\n- Note: Field names may vary in case (`customerGuid` vs `customerguid`)\n\n### 6. General Best Practices\n- Include appropriate NULL checks for filtered fields\n- Use `COUNT(DISTINCT ...)` for counting unique entities\n- Cast numeric IDs to strings when joining or displaying\n- Order results appropriately (e.g., `ORDER BY ContractId`)\n- Choose the correct table based on aggregation level (contract-level vs customer-level)\n\n## Common Pitfalls to Avoid\n1. Don\'t filter on `caf_description IS NOT NULL` when looking for CAF objections - explode `caf_causecodes` instead\n2. Don\'t use the wrong table for retail aggregations - use `custguid_agg_customer_genie` for customer-level totals\n3. Don\'t forget to explode array fields before accessing nested properties\n4. Don\'t miscalculate date ranges - verify the exact number of days needed\n5. Don\'t add unnecessary COALESCE or default values unless the expected output requires them\n\n## Output Format\nReturn only the SQL query as a single string without additional explanation or formatting.\n        What is the total amount of money spent on retail items for each contract for customer \'044acb7e-249a-11e4-a0e7-005056811110\'?\n        ', message_id='01f0ce37960b14c4a8029dca2bc62bda', attachments=[GenieAttachment(attachment_id='01f0ce379e4a1c89a6a216a059283f5f', query=GenieQueryAttachment(description="You want to see the total amount of money spent on retail items for each contract associated with customer '044acb7e-249a-11e4-a0e7-005056811110'.", id=None, last_updated_timestamp=None, query="SELECT contract.contractid AS ContractId, SUM(retail_orders.total_price) AS total_retail_spent FROM `data_science_dev`.`ask_contact_center`.`custguid_agg_customer_genie` LATERAL VIEW explode(retail_items_sold_by_contract) contracts AS contract LEFT OUTER LATERAL VIEW explode(contract.retail_items_sold) retail_orders AS retail_orders WHERE customerguid = '044acb7e-249a-11e4-a0e7-005056811110' GROUP BY contract.contractid ORDER BY contract.contractid", query_result_metadata=GenieResultMetadata(is_truncated=None, row_count=0), statement_id='01f0ce37-9e54-1b2d-bf84-aa783d690ee2', title=None), text=None)], created_timestamp=1764539858433, error=MessageError(error="\n[PARSE_SYNTAX_ERROR] Syntax error at or near 'LEFT'. SQLSTATE: 42601 (line 1, pos 244)\n\n== SQL ==\nSELECT contract.contractid AS ContractId, SUM(retail_orders.total_price) AS total_retail_spent FROM `data_science_dev`.`ask_contact_center`.`custguid_agg_customer_genie` LATERAL VIEW explode(retail_items_sold_by_contract) contracts AS contract LEFT OUTER LATERAL VIEW explode(contract.retail_items_sold) retail_orders AS retail_orders WHERE customerguid = '044acb7e-249a-11e4-a0e7-005056811110' GROUP BY contract.contractid ORDER BY contract.contractid\n----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------^^^\n", type=<MessageErrorType.SQL_EXECUTION_EXCEPTION: 'SQL_EXECUTION_EXCEPTION'>), last_updated_timestamp=1764539874571, query_result=Result(is_truncated=None, row_count=0, statement_id='01f0ce37-9e54-1b2d-bf84-aa783d690ee2'), status=<MessageStatus.FAILED: 'FAILED'>, user_id=3542410015021992)
+❌ Genie message failed: response=GenieMessage(id='01f0ce37960b14c4a8029dca2bc62bda', space_id='01f0c71e185a187e969b6397e34eda53', conversation_id='01f0ce37960111e7b6e8020905cdb1d3', content='\n        You are a SQL query generation assistant that converts natural language questions into SQL queries for a customer contract database system called Genie.\n\n## Task Overview\nGenerate SQL queries that accurately retrieve data from the `data_science_dev.ask_contact_center` schema, specifically from tables like `indv_contracts_customer_genie` and `custguid_agg_customer_genie`.\n\n## Database Schema Knowledge\n\n### Key Tables\n1. **indv_contracts_customer_genie** - Contains individual contract-level data with fields including:\n   - `customerGuid` - Customer identifier\n   - `ContractId` - Contract identifier\n   - `Truck` - Truck type/code\n   - `contract_createdate` - Contract creation date\n   - `caf_statuscode` - CAF (Customer Assistance Feedback) status code\n   - `caf_description` - CAF description text\n   - `caf_causecodes` - Array of CAF cause codes with nested fields:\n     - `Description` - Cause code description\n     - `Category` - Cause code category\n   - `retail_items_sold` - Array of retail items with nested fields:\n     - `total_price` - Price of retail item\n\n2. **custguid_agg_customer_genie** - Contains aggregated customer-level data with fields including:\n   - `customerguid` - Customer identifier\n   - `retail_items_sold_by_contract` - Nested array structure containing contracts and their retail items\n\n## Query Generation Rules\n\n### 1. Handling Array/Nested Data\n- Use `LATERAL VIEW explode()` to unnest array fields\n- For nested arrays (e.g., CAF cause codes), use syntax:\n  ```sql\n  LATERAL VIEW explode(caf_causecodes) as caf_codes\n  ```\n- For deeply nested structures, chain multiple LATERAL VIEW statements\n- When exploding arrays, always select fields from the exploded alias (e.g., `caf_codes.Description`, `caf_codes.Category`)\n\n### 2. CAF Objections Queries\n- CAF objections are stored in the `caf_causecodes` array field, NOT in `caf_description`\n- To retrieve CAF objections, you MUST explode the `caf_causecodes` array\n- Include relevant fields: `Description`, `Category`, and `caf_statuscode`\n- Cast `ContractId` to string for consistency: `cast(ContractId as string)`\n\n### 3. Retail Items Queries\n- Retail items are stored in array fields that require explosion\n- For contract-level queries, use `indv_contracts_customer_genie` with `LATERAL VIEW explode(retail_items_sold)`\n- For customer-level aggregations across contracts, use `custguid_agg_customer_genie` with nested explosions:\n  ```sql\n  LATERAL VIEW explode(retail_items_sold_by_contract) contracts AS contract\n  LATERAL VIEW explode(contract.retail_items_sold) items AS retail_orders\n  ```\n- Filter for valid prices: `WHERE retail_orders.total_price > 0`\n- Avoid using `COALESCE(SUM(...), 0)` when the ground truth doesn\'t use it\n\n### 4. Date Range Calculations\n- For "last N weeks", calculate as: `BETWEEN DATE_SUB(CURRENT_DATE, N*7-1) AND CURRENT_DATE`\n- Example: "last 2 weeks" = `DATE_SUB(CURRENT_DATE, 13)` (14 days minus 1)\n- Always include NULL checks for date fields when filtering: `AND contract_createdate IS NOT NULL`\n\n### 5. Customer Filtering\n- Use exact GUID matching: `WHERE customerGuid = \'<guid>\'` or `WHERE customerguid = \'<guid>\'`\n- Note: Field names may vary in case (`customerGuid` vs `customerguid`)\n\n### 6. General Best Practices\n- Include appropriate NULL checks for filtered fields\n- Use `COUNT(DISTINCT ...)` for counting unique entities\n- Cast numeric IDs to strings when joining or displaying\n- Order results appropriately (e.g., `ORDER BY ContractId`)\n- Choose the correct table based on aggregation level (contract-level vs customer-level)\n\n## Common Pitfalls to Avoid\n1. Don\'t filter on `caf_description IS NOT NULL` when looking for CAF objections - explode `caf_causecodes` instead\n2. Don\'t use the wrong table for retail aggregations - use `custguid_agg_customer_genie` for customer-level totals\n3. Don\'t forget to explode array fields before accessing nested properties\n4. Don\'t miscalculate date ranges - verify the exact number of days needed\n5. Don\'t add unnecessary COALESCE or default values unless the expected output requires them\n\n## Output Format\nReturn only the SQL query as a single string without additional explanation or formatting.\n        What is the total amount of money spent on retail items for each contract for customer \'044acb7e-249a-11e4-a0e7-005056811110\'?\n        ', message_id='01f0ce37960b14c4a8029dca2bc62bda', attachments=[GenieAttachment(attachment_id='01f0ce379e4a1c89a6a216a059283f5f', query=GenieQueryAttachment(description="You want to see the total amount of money spent on retail items for each contract associated with customer '044acb7e-249a-11e4-a0e7-005056811110'.", id=None, last_updated_timestamp=None, query="SELECT contract.contractid AS ContractId, SUM(retail_orders.total_price) AS total_retail_spent FROM `data_science_dev`.`ask_contact_center`.`custguid_agg_customer_genie` LATERAL VIEW explode(retail_items_sold_by_contract) contracts AS contract LEFT OUTER LATERAL VIEW explode(contract.retail_items_sold) retail_orders AS retail_orders WHERE customerguid = '044acb7e-249a-11e4-a0e7-005056811110' GROUP BY contract.contractid ORDER BY contract.contractid", query_result_metadata=GenieResultMetadata(is_truncated=None, row_count=0), statement_id='01f0ce37-9e54-1b2d-bf84-aa783d690ee2', title=None), text=None)], created_timestamp=1764539858433, error=MessageError(error="\n[PARSE_SYNTAX_ERROR] Syntax error at or near 'LEFT'. SQLSTATE: 42601 (line 1, pos 244)\n\n== SQL ==\nSELECT contract.contractid AS ContractId, SUM(retail_orders.total_price) AS total_retail_spent FROM `data_science_dev`.`ask_contact_center`.`custguid_agg_customer_genie` LATERAL VIEW explode(retail_items_sold_by_contract) contracts AS contract LEFT OUTER LATERAL VIEW explode(contract.retail_items_sold) retail_orders AS retail_orders WHERE customerguid = '044acb7e-249a-11e4-a0e7-005056811110' GROUP BY contract.contractid ORDER BY contract.contractid\n----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------^^^\n", type=<MessageErrorType.SQL_EXECUTION_EXCEPTION: 'SQL_EXECUTION_EXCEPTION'>), last_updated_timestamp=1764539874571, query_result=Result(is_truncated=None, row_count=0, statement_id='01f0ce37-9e54-1b2d-bf84-aa783d690ee2'), status=<MessageStatus.FAILED: 'FAILED'>, user_id=3542410015021992)
+❌ Genie message failed: response=GenieMessage(id='01f0ce37960b14c4a8029dca2bc62bda', space_id='01f0c71e185a187e969b6397e34eda53', conversation_id='01f0ce37960111e7b6e8020905cdb1d3', content='\n        You are a SQL query generation assistant that converts natural language questions into SQL queries for a customer contract database system called Genie.\n\n## Task Overview\nGenerate SQL queries that accurately retrieve data from the `data_science_dev.ask_contact_center` schema, specifically from tables like `indv_contracts_customer_genie` and `custguid_agg_customer_genie`.\n\n## Database Schema Knowledge\n\n### Key Tables\n1. **indv_contracts_customer_genie** - Contains individual contract-level data with fields including:\n   - `customerGuid` - Customer identifier\n   - `ContractId` - Contract identifier\n   - `Truck` - Truck type/code\n   - `contract_createdate` - Contract creation date\n   - `caf_statuscode` - CAF (Customer Assistance Feedback) status code\n   - `caf_description` - CAF description text\n   - `caf_causecodes` - Array of CAF cause codes with nested fields:\n     - `Description` - Cause code description\n     - `Category` - Cause code category\n   - `retail_items_sold` - Array of retail items with nested fields:\n     - `total_price` - Price of retail item\n\n2. **custguid_agg_customer_genie** - Contains aggregated customer-level data with fields including:\n   - `customerguid` - Customer identifier\n   - `retail_items_sold_by_contract` - Nested array structure containing contracts and their retail items\n\n## Query Generation Rules\n\n### 1. Handling Array/Nested Data\n- Use `LATERAL VIEW explode()` to unnest array fields\n- For nested arrays (e.g., CAF cause codes), use syntax:\n  ```sql\n  LATERAL VIEW explode(caf_causecodes) as caf_codes\n  ```\n- For deeply nested structures, chain multiple LATERAL VIEW statements\n- When exploding arrays, always select fields from the exploded alias (e.g., `caf_codes.Description`, `caf_codes.Category`)\n\n### 2. CAF Objections Queries\n- CAF objections are stored in the `caf_causecodes` array field, NOT in `caf_description`\n- To retrieve CAF objections, you MUST explode the `caf_causecodes` array\n- Include relevant fields: `Description`, `Category`, and `caf_statuscode`\n- Cast `ContractId` to string for consistency: `cast(ContractId as string)`\n\n### 3. Retail Items Queries\n- Retail items are stored in array fields that require explosion\n- For contract-level queries, use `indv_contracts_customer_genie` with `LATERAL VIEW explode(retail_items_sold)`\n- For customer-level aggregations across contracts, use `custguid_agg_customer_genie` with nested explosions:\n  ```sql\n  LATERAL VIEW explode(retail_items_sold_by_contract) contracts AS contract\n  LATERAL VIEW explode(contract.retail_items_sold) items AS retail_orders\n  ```\n- Filter for valid prices: `WHERE retail_orders.total_price > 0`\n- Avoid using `COALESCE(SUM(...), 0)` when the ground truth doesn\'t use it\n\n### 4. Date Range Calculations\n- For "last N weeks", calculate as: `BETWEEN DATE_SUB(CURRENT_DATE, N*7-1) AND CURRENT_DATE`\n- Example: "last 2 weeks" = `DATE_SUB(CURRENT_DATE, 13)` (14 days minus 1)\n- Always include NULL checks for date fields when filtering: `AND contract_createdate IS NOT NULL`\n\n### 5. Customer Filtering\n- Use exact GUID matching: `WHERE customerGuid = \'<guid>\'` or `WHERE customerguid = \'<guid>\'`\n- Note: Field names may vary in case (`customerGuid` vs `customerguid`)\n\n### 6. General Best Practices\n- Include appropriate NULL checks for filtered fields\n- Use `COUNT(DISTINCT ...)` for counting unique entities\n- Cast numeric IDs to strings when joining or displaying\n- Order results appropriately (e.g., `ORDER BY ContractId`)\n- Choose the correct table based on aggregation level (contract-level vs customer-level)\n\n## Common Pitfalls to Avoid\n1. Don\'t filter on `caf_description IS NOT NULL` when looking for CAF objections - explode `caf_causecodes` instead\n2. Don\'t use the wrong table for retail aggregations - use `custguid_agg_customer_genie` for customer-level totals\n3. Don\'t forget to explode array fields before accessing nested properties\n4. Don\'t miscalculate date ranges - verify the exact number of days needed\n5. Don\'t add unnecessary COALESCE or default values unless the expected output requires them\n\n## Output Format\nReturn only the SQL query as a single string without additional explanation or formatting.\n        What is the total amount of money spent on retail items for each contract for customer \'044acb7e-249a-11e4-a0e7-005056811110\'?\n        ', message_id='01f0ce37960b14c4a8029dca2bc62bda', attachments=[GenieAttachment(attachment_id='01f0ce379e4a1c89a6a216a059283f5f', query=GenieQueryAttachment(description="You want to see the total amount of money spent on retail items for each contract associated with customer '044acb7e-249a-11e4-a0e7-005056811110'.", id=None, last_updated_timestamp=None, query="SELECT contract.contractid AS ContractId, SUM(retail_orders.total_price) AS total_retail_spent FROM `data_science_dev`.`ask_contact_center`.`custguid_agg_customer_genie` LATERAL VIEW explode(retail_items_sold_by_contract) contracts AS contract LEFT OUTER LATERAL VIEW explode(contract.retail_items_sold) retail_orders AS retail_orders WHERE customerguid = '044acb7e-249a-11e4-a0e7-005056811110' GROUP BY contract.contractid ORDER BY contract.contractid", query_result_metadata=GenieResultMetadata(is_truncated=None, row_count=0), statement_id='01f0ce37-9e54-1b2d-bf84-aa783d690ee2', title=None), text=None)], created_timestamp=1764539858433, error=MessageError(error="\n[PARSE_SYNTAX_ERROR] Syntax error at or near 'LEFT'. SQLSTATE: 42601 (line 1, pos 244)\n\n== SQL ==\nSELECT contract.contractid AS ContractId, SUM(retail_orders.total_price) AS total_retail_spent FROM `data_science_dev`.`ask_contact_center`.`custguid_agg_customer_genie` LATERAL VIEW explode(retail_items_sold_by_contract) contracts AS contract LEFT OUTER LATERAL VIEW explode(contract.retail_items_sold) retail_orders AS retail_orders WHERE customerguid = '044acb7e-249a-11e4-a0e7-005056811110' GROUP BY contract.contractid ORDER BY contract.contractid\n----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------^^^\n", type=<MessageErrorType.SQL_EXECUTION_EXCEPTION: 'SQL_EXECUTION_EXCEPTION'>), last_updated_timestamp=1764539874571, query_result=Result(is_truncated=None, row_count=0, statement_id='01f0ce37-9e54-1b2d-bf84-aa783d690ee2'), status=<MessageStatus.FAILED: 'FAILED'>, user_id=3542410015021992)
+🗳️❌Polling timed out after 120 seconds without reaching status 'MessageStatus.COMPLETED'.
+Genie is done processing! Going to sleep for 24 seconds
+😑 Genie has returned an error GenieTelemetry(conversation_id='01f0ce37960111e7b6e8020905cdb1d3', statement_id='01f0ce37-9e54-1b2d-bf84-aa783d690ee2', genie_query="SELECT contract.contractid AS ContractId, SUM(retail_orders.total_price) AS total_retail_spent FROM `data_science_dev`.`ask_contact_center`.`custguid_agg_customer_genie` LATERAL VIEW explode(retail_items_sold_by_contract) contracts AS contract LEFT OUTER LATERAL VIEW explode(contract.retail_items_sold) retail_orders AS retail_orders WHERE customerguid = '044acb7e-249a-11e4-a0e7-005056811110' GROUP BY contract.contractid ORDER BY contract.contractid", original_question="What is the total amount of money spent on retail items for each contract for customer '044acb7e-249a-11e4-a0e7-005056811110'?", row_count=0, genie_generated_sql_thought_process_description="You want to see the total amount of money spent on retail items for each contract associated with customer '044acb7e-249a-11e4-a0e7-005056811110'.", created_timestamp=1764539858433, query_result_metadata={'row_count': 0, 'statement_id': '01f0ce37-9e54-1b2d-bf84-aa783d690ee2'}, error=MessageError(error="\n[PARSE_SYNTAX_ERROR] Syntax error at or near 'LEFT'. SQLSTATE: 42601 (line 1, pos 244)\n\n== SQL ==\nSELECT contract.contractid AS ContractId, SUM(retail_orders.total_price) AS total_retail_spent FROM `data_science_dev`.`ask_contact_center`.`custguid_agg_customer_genie` LATERAL VIEW explode(retail_items_sold_by_contract) contracts AS contract LEFT OUTER LATERAL VIEW explode(contract.retail_items_sold) retail_orders AS retail_orders WHERE customerguid = '044acb7e-249a-11e4-a0e7-005056811110' GROUP BY contract.contractid ORDER BY contract.contractid\n----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------^^^\n", type=<MessageErrorType.SQL_EXECUTION_EXCEPTION: 'SQL_EXECUTION_EXCEPTION'>), genie_question='\n        You are a SQL query generation assistant that converts natural language questions into SQL queries for a customer contract database system called Genie.\n\n## Task Overview\nGenerate SQL queries that accurately retrieve data from the `data_science_dev.ask_contact_center` schema, specifically from tables like `indv_contracts_customer_genie` and `custguid_agg_customer_genie`.\n\n## Database Schema Knowledge\n\n### Key Tables\n1. **indv_contracts_customer_genie** - Contains individual contract-level data with fields including:\n   - `customerGuid` - Customer identifier\n   - `ContractId` - Contract identifier\n   - `Truck` - Truck type/code\n   - `contract_createdate` - Contract creation date\n   - `caf_statuscode` - CAF (Customer Assistance Feedback) status code\n   - `caf_description` - CAF description text\n   - `caf_causecodes` - Array of CAF cause codes with nested fields:\n     - `Description` - Cause code description\n     - `Category` - Cause code category\n   - `retail_items_sold` - Array of retail items with nested fields:\n     - `total_price` - Price of retail item\n\n2. **custguid_agg_customer_genie** - Contains aggregated customer-level data with fields including:\n   - `customerguid` - Customer identifier\n   - `retail_items_sold_by_contract` - Nested array structure containing contracts and their retail items\n\n## Query Generation Rules\n\n### 1. Handling Array/Nested Data\n- Use `LATERAL VIEW explode()` to unnest array fields\n- For nested arrays (e.g., CAF cause codes), use syntax:\n  ```sql\n  LATERAL VIEW explode(caf_causecodes) as caf_codes\n  ```\n- For deeply nested structures, chain multiple LATERAL VIEW statements\n- When exploding arrays, always select fields from the exploded alias (e.g., `caf_codes.Description`, `caf_codes.Category`)\n\n### 2. CAF Objections Queries\n- CAF objections are stored in the `caf_causecodes` array field, NOT in `caf_description`\n- To retrieve CAF objections, you MUST explode the `caf_causecodes` array\n- Include relevant fields: `Description`, `Category`, and `caf_statuscode`\n- Cast `ContractId` to string for consistency: `cast(ContractId as string)`\n\n### 3. Retail Items Queries\n- Retail items are stored in array fields that require explosion\n- For contract-level queries, use `indv_contracts_customer_genie` with `LATERAL VIEW explode(retail_items_sold)`\n- For customer-level aggregations across contracts, use `custguid_agg_customer_genie` with nested explosions:\n  ```sql\n  LATERAL VIEW explode(retail_items_sold_by_contract) contracts AS contract\n  LATERAL VIEW explode(contract.retail_items_sold) items AS retail_orders\n  ```\n- Filter for valid prices: `WHERE retail_orders.total_price > 0`\n- Avoid using `COALESCE(SUM(...), 0)` when the ground truth doesn\'t use it\n\n### 4. Date Range Calculations\n- For "last N weeks", calculate as: `BETWEEN DATE_SUB(CURRENT_DATE, N*7-1) AND CURRENT_DATE`\n- Example: "last 2 weeks" = `DATE_SUB(CURRENT_DATE, 13)` (14 days minus 1)\n- Always include NULL checks for date fields when filtering: `AND contract_createdate IS NOT NULL`\n\n### 5. Customer Filtering\n- Use exact GUID matching: `WHERE customerGuid = \'<guid>\'` or `WHERE customerguid = \'<guid>\'`\n- Note: Field names may vary in case (`customerGuid` vs `customerguid`)\n\n### 6. General Best Practices\n- Include appropriate NULL checks for filtered fields\n- Use `COUNT(DISTINCT ...)` for counting unique entities\n- Cast numeric IDs to strings when joining or displaying\n- Order results appropriately (e.g., `ORDER BY ContractId`)\n- Choose the correct table based on aggregation level (contract-level vs customer-level)\n\n## Common Pitfalls to Avoid\n1. Don\'t filter on `caf_description IS NOT NULL` when looking for CAF objections - explode `caf_causecodes` instead\n2. Don\'t use the wrong table for retail aggregations - use `custguid_agg_customer_genie` for customer-level totals\n3. Don\'t forget to explode array fields before accessing nested properties\n4. Don\'t miscalculate date ranges - verify the exact number of days needed\n5. Don\'t add unnecessary COALESCE or default values unless the expected output requires them\n\n## Output Format\nReturn only the SQL query as a single string without additional explanation or formatting.\n        What is the total amount of money spent on retail items for each contract for customer \'044acb7e-249a-11e4-a0e7-005056811110\'?\n        ', space_id='01f0c71e185a187e969b6397e34eda53')
+GEPA Optimization:  50%|█████     | 5/10 [08:53<08:53, 106.73s/rollouts]🧮aggregations={'sql_results_equivalence': 0.0}
+Iteration 1: New program is on the linear pareto front
+Iteration 1: Full valset score for new program: 0.41999999999999993
+Iteration 1: Full train_val score for new program: 0.41999999999999993
+Iteration 1: Individual valset scores for new program: [0.7, 0.7, 0.0, 0.0, 0.7]
+Iteration 1: New valset pareto front scores: [0.7, 0.7, 0.0, 0.0, 0.7]
+Iteration 1: Full valset pareto front score: 0.41999999999999993
+Iteration 1: Updated valset pareto front programs: [{0, 1}, {0, 1}, {0, 1}, {0, 1}, {1}]
+Iteration 1: Best valset aggregate score so far: 0.41999999999999993
+Iteration 1: Best program as per aggregate score on train_val: 1
+Iteration 1: Best program as per aggregate score on valset: 1
+Iteration 1: Best score on valset: 0.41999999999999993
+Iteration 1: Best score on train_val: 0.41999999999999993
+Iteration 1: Linear pareto front program index: 1
+Iteration 1: New program candidate index: 1

@@ -105,8 +105,8 @@ class JudgeService():
         Guideline:{guideline}
 
         [Context]
-        Output: {{outputs}}
-        Expected Response: {{expected_response}}
+        Output: {{{{outputs}}}}
+        Expected Response: {{{{expectations}}}}
 
         [Choices]
         [[True]]: Passes the aforementioned guideline
@@ -118,14 +118,14 @@ class JudgeService():
         return JUDGE_TEMPLATE
 
     def load_judges_from_config(self) -> List[Callable]:
-        
         judges_config:dict = config.scorers.global_guidelines.get(config.runtime.JUDGE_VERSION)
+
         for name, guideline in judges_config.items():
             #judge = custom_prompt_judge(name=name, prompt_template=criteria)
             judge = make_judge(
                 name=name,
                 instructions=self.judge_template.format(guideline=guideline),
-                model=config.runtime.JUDGE_ENDPOINT
+                model=config.runtime.JUDGE_ENDPOINT,
             )
 
             self.judges.append(judge)

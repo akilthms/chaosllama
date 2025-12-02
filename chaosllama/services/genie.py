@@ -53,7 +53,7 @@ class GenieService():
 
     @mlflow.trace(span_type=SpanType.TOOL)
     def poll_status(self, func_call: Callable,
-                    timeout_seconds: int = 300,
+                    timeout_seconds: int = 30,
                     poll_interval: int = 5,
                     **func_kwargs) -> dict:
         EXPECTED_STATUS = MessageStatus.COMPLETED
@@ -66,7 +66,10 @@ class GenieService():
             # print(f"Current status of conversation_id {response.conversation_id}: {genie_message_status}")
 
             if genie_message_status == MessageStatus.FAILED:
-                print(f"❌ Genie message failed: {response=}")
+                print(f"❌ Genie message failed: {response.error=}")
+                if "[PARSE_SYNTAX_ERROR]" in response.error.error:
+                    print(f"Parse syntax error found, returning control flow immediately...")
+                    return response
 
             if genie_message_status == EXPECTED_STATUS:
                 # print(f"✅ Reached desired status: {EXPECTED_STATUS}")
@@ -75,8 +78,11 @@ class GenieService():
             elapsed = time.time() - start_time
             time.sleep(poll_interval)
 
-        raise TimeoutError(
-            f"Polling timed out after {timeout_seconds} seconds without reaching status '{EXPECTED_STATUS}'.")
+        # If timeout is reached, return the last payload to avoid stopping the entire optimization loop
+        print(f"🗳️❌Polling timed out after {timeout_seconds} seconds without reaching status '{EXPECTED_STATUS}'.")
+        return response
+        # raise TimeoutError(
+        #     f"🗳️❌Polling timed out after {timeout_seconds} seconds without reaching status '{EXPECTED_STATUS}'.")
 
     def retry_message(max_retries: int = 3, delay: int = 10):
         def decorator(func):
@@ -289,6 +295,8 @@ class GenieService():
             message, genie_attachment = self.synthesize_reply(reply_context, message) if (
                         is_followup and self.should_reply) else (message, genie_attachment)
             genie_query_attachment = genie_attachment.query
+
+
             # print(f"  🤔 Question {i+1}: {question} | Completed ☑️")
             genie_telem = GenieTelemetry(
                 genie_question=question,
@@ -297,6 +305,7 @@ class GenieService():
                 conversation_id=message.conversation_id,
                 space_id=message.space_id,
                 created_timestamp=message.created_timestamp,
+                error=message.error,
                 statement_id=message.query_result.statement_id if message.query_result else None,
                 genie_generated_sql_thought_process_description=genie_attachment.query.description if genie_attachment.query else None,
                 query_result_metadata=message.query_result.as_dict() if message.query_result else None,
@@ -316,6 +325,7 @@ class GenieService():
                 statement_id=None,
                 genie_generated_sql_thought_process_description="Genie Failed to Provide a Response due to Internal Error",
                 query_result_metadata=None,
+                error=message.error,
                 row_count=None
             )
         return genie_telem
@@ -358,5 +368,52 @@ class GenieAgent:
         return results.genie_query
 
 
+class GenieAgent_v2:
+    """ Refactored Version of the Genie Manager into an Agent to fit into MLFlow 3.0 paradigm"""
 
+    def __init__(self, space_id:str=config.genie.RUNTIME_GENIE_SPACE_ID, should_reply:bool = True, ):
+        self.space_id = space_id
+        self._w = _w
+        self.client = self._w.genie
+        self.should_reply = should_reply
+        self.genie_mgr = GenieService(self.space_id, should_reply=True)
+        self.token =  self._w.tokens.create().token_value
+
+    @mlflow.trace(name="invoke method")
+    def invoke(self, question: str, timeout:str) -> str:
+        # question = inputs['question']
+        # index = inputs['index']
+        # TODO: Uncomment and implement update_current_trace
+        #mlflow.update_current_trace(request_preview=f"{question}")
+
+        ################################################
+        # Update Genie System Instructions with New API#
+        ################################################
+
+        # prompt_uri = f"prompts:/{config.runtime.PROMPT_REGISTRY}/1"
+        system_prompt=mlflow.genai.load_prompt(name_or_uri=f"{config.runtime.PROMPT_REGISTRY}", version=1)
+        print(f"🤖 System Prompt: {system_prompt.format(system_instructions="")}")
+
+
+        genie_question = f"""
+        {system_prompt.format(system_instructions="")}
+        {question}
+        """
+
+        print(f"🧞‍♂️🧞‍♂️ Genie Question: {genie_question}")
+        inputs = dict(genie_input=genie_question, question=question)
+        genie_timeout = int(timeout)
+        
+        randomness = random.randint(1, 3)
+        time.sleep(genie_timeout)
+        print(f"⏳ Sleeping for {genie_timeout} seconds before creating conversation....")
+        results = self.genie_mgr.genie_workflow_v2(inputs)
+        time.sleep(genie_timeout)
+        print("Genie is done processing!", f"Going to sleep for {genie_timeout} seconds")
+        
+        if results.error:
+            print(f"😑 Genie has returned an error {results.error}")
+            return dict(error=results.error, genie_query=results.genie_query)
+        else:
+            return results.genie_query
 

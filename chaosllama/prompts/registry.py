@@ -6,7 +6,7 @@ from mlflow.genai.scorers import ExpectationsGuidelines, Guidelines
 from chaosllama.profiles.config import config
 
 def format_guidelines():
-  global_guidelines = config.scorers.global_guidelines["v4"] 
+  global_guidelines = config.scorers.global_guidelines["v3"] 
   return "\n".join([f"- {name}: {g[0]}" for name, g in global_guidelines.items()])
 
 METRICS_DEFINITION = """
@@ -221,7 +221,7 @@ INSTROSPECT_PROMPT_V5 = PromptTemplate(input_variables=INPUT_VARS_V5,
                                       """)
 
 
-global_guidelines = config.scorers.global_guidelines["v4"]
+global_guidelines = config.scorers.global_guidelines["v3"]
 guidelines = [Guidelines(name=name, guidelines=g[0]) for name, g in global_guidelines.items()]
 
 INPUT_VARS_V6 = [

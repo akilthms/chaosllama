@@ -20,8 +20,15 @@ spark = get_spark_session()
 
 
 def execute_query_spark(query: str):
-    df = spark.sql(query)
-    result = [tuple(row) for row in df.collect()]
+
+    double_quotes = '"'
+    try:
+        df = spark.sql(query.replace(double_quotes, ''))
+        result = [tuple(row) for row in df.collect()]
+    except Exception as e:
+        if "PARSE_SYNTAX_ERROR" in e:
+            result = ["PARSE_SYNTAX_ERROR"]
+        print(e)
     return result
 
 def execute_query(query: str, warehouse_id: str = WAREHOUSE_ID, server_hostname: str = HOST):
@@ -63,9 +70,16 @@ def process_eval_request(inputs: dict | str) -> str:
     return inputs
 
 
-def process_eval_output(output: str):
+def process_eval_output(output: str | dict):
     # [TODO]: Implemet logic
-    return output
+    # Process if there is an error
+    if isinstance(output, dict):
+        error = output.get("error", None)
+        output = output.get("genie_query", None)
+    elif isinstance(output, str):
+        error = None
+
+    return error, output
 
 
 def process_eval_expectations(expectations: Optional[dict[str, Any]]):
@@ -93,12 +107,16 @@ def eval_sql_clauses_distro(inputs: dict, outputs: str, expectations: Optional[d
     """
     _metadata = None if is_sql_token_distro_equal else {"difference_in_distrubtion": diff_distro}
 
-    return Feedback(
+    feedback = Feedback(
         name="sql_clauses_distribution_equivalence",
         value=True if is_sql_token_distro_equal else False,
         metadata=_metadata,
         rationale=PASS_RATIONALE if is_sql_token_distro_equal else FAIL_RATIONALE
     )
+
+    print(feedback)
+
+    return feedback
 
 
 @scorer(name="sql_results_equivalence")
@@ -109,10 +127,20 @@ def eval_query_results(inputs: dict, outputs: dict, expectations: Optional[dict[
     outputs = process_eval_output(outputs)
     """
     # request = process_eval_request(inputs)
-    outputs = process_eval_output(outputs)
-    ground_truth_sql = process_eval_expectations(expectations)
+    error, outputs = process_eval_output(outputs)
+    _metadata = dict(inputs=inputs)
 
-    # queries_list = interleave_list([request], [outputs]) if isinstance(request,dict) or (isinstance(request,str)) else interleave_list(request, outputs)
+    if error:
+        return Feedback(
+        name="sql_results_equivalence",
+        value=False,
+        metadata=_metadata,
+        rationale=f"The response with genie failed with the following error {outputs}"
+    )
+
+
+
+    ground_truth_sql = process_eval_expectations(expectations)
 
     queries_list = interleave_list([ground_truth_sql], [outputs])
 
@@ -122,7 +150,7 @@ def eval_query_results(inputs: dict, outputs: dict, expectations: Optional[dict[
         scores = [tuple(scores[i:i + 2]) for i in range(0, len(scores), 2)]  # group the predictions and targets
 
     if len(scores) > 1: raise ValueError("Only one pair of queries is supported")
-
+    
     results_are_equal = []
 
     for pred_results, ground_truth_results in scores:
@@ -145,6 +173,14 @@ def eval_query_results(inputs: dict, outputs: dict, expectations: Optional[dict[
     Ground Truth Dataframe:
     {scores[0][0]}
     """
+    
+    # rationale_logic = ""
+    # if (results_are_equal[0] == "yes"):
+    #     rationale = CORRECT_SQL_RATIONALE
+    # elif (results_are_equal[0] == "no"):
+    #     rationale = INCORRECT_SQL_RATIONALE
+    # elif (results_are_equal[0] == "PARSE_SYNTAX_ERROR"):
+    #     rationale_logic = ""
 
     rationale_logic = (
         CORRECT_SQL_RATIONALE if (results_are_equal[0] == "yes")
@@ -156,6 +192,7 @@ def eval_query_results(inputs: dict, outputs: dict, expectations: Optional[dict[
     return Feedback(
         name="sql_results_equivalence",
         value=_value,
+        metadata=_metadata,
         rationale=rationale_logic
     )
 

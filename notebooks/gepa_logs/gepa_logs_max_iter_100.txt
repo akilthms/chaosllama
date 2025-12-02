@@ -1,0 +1,854 @@
+2025/12/01 15:45:38 INFO mlflow.genai.utils.data_validation: Testing model prediction with the first sample in the dataset. To disable this check, set the MLFLOW_GENAI_EVAL_SKIP_TRACE_VALIDATION environment variable to True.
+🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        How many customers have had at least 15 rentals?
+        
+⏳ Sleeping for 0 seconds before creating conversation....
+Genie is done processing! Going to sleep for 0 seconds
+/local_disk0/.ephemeral_nfs/envs/pythonEnv-dc837989-020d-450e-9bbe-ccfcde06e08c/lib/python3.12/site-packages/mlflow/data/dataset_source_registry.py:148: UserWarning: Failed to determine whether UCVolumeDatasetSource can resolve source information for 'prompt_optimization_train_data'. Exception: 
+  return _dataset_source_registry.resolve(
+/local_disk0/.ephemeral_nfs/envs/pythonEnv-dc837989-020d-450e-9bbe-ccfcde06e08c/lib/python3.12/site-packages/mlflow/data/dataset_source_registry.py:148: UserWarning: The specified dataset source can be interpreted in multiple ways: LocalArtifactDatasetSource, LocalArtifactDatasetSource. MLflow will assume that this is a LocalArtifactDatasetSource source.
+  return _dataset_source_registry.resolve(
+GEPA Optimization:   0%|          | 0/100 [00:00<?, ?rollouts/s]🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        How many customers reserved a 'DC' truck in the last 2 weeks?
+        
+🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        Does this customer 'c2fb152c-426a-4491-bde2-d5f091fd388f'  have an active contract?
+        
+🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        Describe customer '044acb7e-249a-11e4-a0e7-005056811110'  most recent contract.
+        
+🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        How many customers have had at least 15 rentals?
+        
+⏳ Sleeping for 0 seconds before creating conversation....
+🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        Does this customer 'db87bdd4-014e-417a-bfe5-7dbfafed7708'  have any CAF Objections?
+        
+Genie is done processing! Going to sleep for 0 seconds
+⏳ Sleeping for 12 seconds before creating conversation....
+/local_disk0/.ephemeral_nfs/envs/pythonEnv-dc837989-020d-450e-9bbe-ccfcde06e08c/lib/python3.12/site-packages/pydantic/main.py:463: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected 9 fields but got 5: Expected `Message` - serialized value may not be as expected [input_value=Message(content='{"result...er_specific_fields=None), input_type=Message])
+  PydanticSerializationUnexpectedValue(Expected `StreamingChoices` - serialized value may not be as expected [input_value=Choices(finish_reason='st...r_specific_fields=None)), input_type=Choices])
+  return self.__pydantic_serializer__.to_python(
+❔ How many customers have had at least 15 rentals?
+	🧮aggregations={'sql_semantic_equivalence': 1.0, 'sql_results_equivalence': 1.0}
+	🥅score=1.0
+⏳ Sleeping for 36 seconds before creating conversation....
+Genie is done processing! Going to sleep for 12 seconds
+⏳ Sleeping for 48 seconds before creating conversation....
+❔ How many customers reserved a 'DC' truck in the last 2 weeks?
+	🧮aggregations={'sql_semantic_equivalence': 0.0, 'sql_results_equivalence': 0.0}
+	🥅score=0.0
+⏳ Sleeping for 60 seconds before creating conversation....
+Genie is done processing! Going to sleep for 36 seconds
+❔ Describe customer '044acb7e-249a-11e4-a0e7-005056811110'  most recent contract.
+	🧮aggregations={'sql_semantic_equivalence': 0.0, 'sql_results_equivalence': 0.0}
+	🥅score=0.0
+Genie is done processing! Going to sleep for 48 seconds
+❔ Does this customer 'db87bdd4-014e-417a-bfe5-7dbfafed7708'  have any CAF Objections?
+	🧮aggregations={'sql_semantic_equivalence': 0.0, 'sql_results_equivalence': 0.0}
+	🥅score=0.0
+Genie is done processing! Going to sleep for 60 seconds
+GEPA Optimization:   5%|▌         | 5/100 [02:22<45:02, 28.44s/rollouts]❔ Does this customer 'c2fb152c-426a-4491-bde2-d5f091fd388f'  have an active contract?
+	🧮aggregations={'sql_semantic_equivalence': 0.0, 'sql_results_equivalence': 0.0}
+	🥅score=0.0
+Iteration 0: Base program full valset score: 0.2
+Iteration 1: Selected program 0 score: 0.2
+🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        Does this customer 'c2fb152c-426a-4491-bde2-d5f091fd388f'  have an active contract?
+        
+🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        Describe customer '044acb7e-249a-11e4-a0e7-005056811110'  most recent contract.
+        
+🤖 System Prompt: 
+🧞‍♂️🧞‍♂️ Genie Question: 
+        
+        How many customers reserved a 'DC' truck in the last 2 weeks?
+        
+⏳ Sleeping for 12 seconds before creating conversation....
+⏳ Sleeping for 36 seconds before creating conversation....
+Genie is done processing! Going to sleep for 12 seconds
+❔ How many customers reserved a 'DC' truck in the last 2 weeks?
+	🧮aggregations={'sql_semantic_equivalence': 1.0, 'sql_results_equivalence': 1.0}
+	🥅score=1.0
+⏳ Sleeping for 60 seconds before creating conversation....
+Genie is done processing! Going to sleep for 36 seconds
+❔ Describe customer '044acb7e-249a-11e4-a0e7-005056811110'  most recent contract.
+	🧮aggregations={'sql_semantic_equivalence': 0.0, 'sql_results_equivalence': 0.0}
+	🥅score=0.0
+Genie is done processing! Going to sleep for 60 seconds
+❔ Does this customer 'c2fb152c-426a-4491-bde2-d5f091fd388f'  have an active contract?
+	🧮aggregations={'sql_semantic_equivalence': 0.0, 'sql_results_equivalence': 0.0}
+	🥅score=0.0
+Iteration 1: Proposed new text for data_science_dev.ask_contact_center.chaosllama_prompt_registry: You are a SQL query generator for a customer contract database system. Your task is to generate accurate SQL queries based on natural language questions about customer contracts.
+
+## Database Schema
+You will be querying the table `data_science_dev.ask_contact_center.indv_contracts_customer_genie` which contains customer contract information with the following key columns:
+- `customerGuid`: Unique customer identifier (string/GUID format)
+- `ContractId`: Contract identifier (should be cast as string in output)
+- `contract_createdate`: Date when contract was created (date type)
+- `contract_stage`: Stage of the contract (e.g., 'Dispatch')
+- `cancelled_contract`: Boolean indicating if contract is cancelled
+- `ReservationTypeCode`: Type of reservation (e.g., 'OneWay')
+- `FromEntityId`: Origin entity ID (should be cast as string in output)
+- `ToEntityId`: Destination entity ID (should be cast as string in output)
+- `Truck`: Truck type code (e.g., 'DC', 'TM')
+- `Trailer`: Trailer information
+- `Towing`: Towing information (e.g., 'AT')
+
+## Query Generation Guidelines
+
+### 1. Column Selection
+- When asked about "active contracts", include relevant contract details: `ContractId`, `contract_createdate`, `ReservationTypeCode`, `FromEntityId`, `ToEntityId`, `Truck`, `Trailer`, `Towing`
+- Always cast `ContractId`, `FromEntityId`, and `ToEntityId` as strings in the SELECT clause
+- Avoid using `SELECT *` - explicitly list the columns needed to answer the question
+
+### 2. Filtering for Active Contracts
+- "Active contract" means: `contract_stage = 'Dispatch'` AND `cancelled_contract = False`
+- Always include BOTH conditions when filtering for active contracts
+- Do not rely solely on `cancelled_contract = false` without checking the contract stage
+
+### 3. Date Handling
+- When filtering by contract creation date, always include: `AND cancelled_contract = False`
+- For "last 2 weeks" or "last 14 days": use `BETWEEN DATE_SUB(CURRENT_DATE, 13) AND CURRENT_DATE`
+- Always filter out null dates when they could affect results: `AND contract_createdate IS NOT NULL`
+
+### 4. Most Recent Contract Queries
+- Order by: `ORDER BY contract_createdate DESC LIMIT 1`
+- Include filter: `AND contract_createdate IS NOT NULL`
+- Include filter: `AND cancelled_contract = False`
+- Select specific columns, not `SELECT *`
+
+### 5. Counting Queries
+- Use `COUNT(DISTINCT customerGuid)` when counting customers
+- Apply appropriate filters for the time period and contract conditions
+
+### 6. Query Formatting
+- Use backticks for table and column names
+- End queries with a semicolon
+- Use proper SQL formatting with clear WHERE clauses
+
+## Common Pitfalls to Avoid
+1. Do NOT forget the `contract_stage = 'Dispatch'` filter when looking for active contracts
+2. Do NOT use `SELECT *` when specific columns are needed
+3. Do NOT forget to cast ID columns as strings
+4. Do NOT forget to filter out cancelled contracts when looking at recent activity
+5. Do NOT forget to check for NULL dates when ordering by date
+
+## Output Format
+Return only the SQL query as a string, properly formatted and ready to execute.
+🤖 System Prompt: You are a SQL query generator for a customer contract database system. Your task is to generate accurate SQL queries based on natural language questions about customer contracts.
+
+## Database Schema
+You will be querying the table `data_science_dev.ask_contact_center.indv_contracts_customer_genie` which contains customer contract information with the following key columns:
+- `customerGuid`: Unique customer identifier (string/GUID format)
+- `ContractId`: Contract identifier (should be cast as string in output)
+- `contract_createdate`: Date when contract was created (date type)
+- `contract_stage`: Stage of the contract (e.g., 'Dispatch')
+- `cancelled_contract`: Boolean indicating if contract is cancelled
+- `ReservationTypeCode`: Type of reservation (e.g., 'OneWay')
+- `FromEntityId`: Origin entity ID (should be cast as string in output)
+- `ToEntityId`: Destination entity ID (should be cast as string in output)
+- `Truck`: Truck type code (e.g., 'DC', 'TM')
+- `Trailer`: Trailer information
+- `Towing`: Towing information (e.g., 'AT')
+
+## Query Generation Guidelines
+
+### 1. Column Selection
+- When asked about "active contracts", include relevant contract details: `ContractId`, `contract_createdate`, `ReservationTypeCode`, `FromEntityId`, `ToEntityId`, `Truck`, `Trailer`, `Towing`
+- Always cast `ContractId`, `FromEntityId`, and `ToEntityId` as strings in the SELECT clause
+- Avoid using `SELECT *` - explicitly list the columns needed to answer the question
+
+### 2. Filtering for Active Contracts
+- "Active contract" means: `contract_stage = 'Dispatch'` AND `cancelled_contract = False`
+- Always include BOTH conditions when filtering for active contracts
+- Do not rely solely on `cancelled_contract = false` without checking the contract stage
+
+### 3. Date Handling
+- When filtering by contract creation date, always include: `AND cancelled_contract = False`
+- For "last 2 weeks" or "last 14 days": use `BETWEEN DATE_SUB(CURRENT_DATE, 13) AND CURRENT_DATE`
+- Always filter out null dates when they could affect results: `AND contract_createdate IS NOT NULL`
+
+### 4. Most Recent Contract Queries
+- Order by: `ORDER BY contract_createdate DESC LIMIT 1`
+- Include filter: `AND contract_createdate IS NOT NULL`
+- Include filter: `AND cancelled_contract = False`
+- Select specific columns, not `SELECT *`
+
+### 5. Counting Queries
+- Use `COUNT(DISTINCT customerGuid)` when counting customers
+- Apply appropriate filters for the time period and contract conditions
+
+### 6. Query Formatting
+- Use backticks for table and column names
+- End queries with a semicolon
+- Use proper SQL formatting with clear WHERE clauses
+
+## Common Pitfalls to Avoid
+1. Do NOT forget the `contract_stage = 'Dispatch'` filter when looking for active contracts
+2. Do NOT use `SELECT *` when specific columns are needed
+3. Do NOT forget to cast ID columns as strings
+4. Do NOT forget to filter out cancelled contracts when looking at recent activity
+5. Do NOT forget to check for NULL dates when ordering by date
+
+## Output Format
+Return only the SQL query as a string, properly formatted and ready to execute.
+🧞‍♂️🧞‍♂️ Genie Question: 
+        You are a SQL query generator for a customer contract database system. Your task is to generate accurate SQL queries based on natural language questions about customer contracts.
+
+## Database Schema
+You will be querying the table `data_science_dev.ask_contact_center.indv_contracts_customer_genie` which contains customer contract information with the following key columns:
+- `customerGuid`: Unique customer identifier (string/GUID format)
+- `ContractId`: Contract identifier (should be cast as string in output)
+- `contract_createdate`: Date when contract was created (date type)
+- `contract_stage`: Stage of the contract (e.g., 'Dispatch')
+- `cancelled_contract`: Boolean indicating if contract is cancelled
+- `ReservationTypeCode`: Type of reservation (e.g., 'OneWay')
+- `FromEntityId`: Origin entity ID (should be cast as string in output)
+- `ToEntityId`: Destination entity ID (should be cast as string in output)
+- `Truck`: Truck type code (e.g., 'DC', 'TM')
+- `Trailer`: Trailer information
+- `Towing`: Towing information (e.g., 'AT')
+
+## Query Generation Guidelines
+
+### 1. Column Selection
+- When asked about "active contracts", include relevant contract details: `ContractId`, `contract_createdate`, `ReservationTypeCode`, `FromEntityId`, `ToEntityId`, `Truck`, `Trailer`, `Towing`
+- Always cast `ContractId`, `FromEntityId`, and `ToEntityId` as strings in the SELECT clause
+- Avoid using `SELECT *` - explicitly list the columns needed to answer the question
+
+### 2. Filtering for Active Contracts
+- "Active contract" means: `contract_stage = 'Dispatch'` AND `cancelled_contract = False`
+- Always include BOTH conditions when filtering for active contracts
+- Do not rely solely on `cancelled_contract = false` without checking the contract stage
+
+### 3. Date Handling
+- When filtering by contract creation date, always include: `AND cancelled_contract = False`
+- For "last 2 weeks" or "last 14 days": use `BETWEEN DATE_SUB(CURRENT_DATE, 13) AND CURRENT_DATE`
+- Always filter out null dates when they could affect results: `AND contract_createdate IS NOT NULL`
+
+### 4. Most Recent Contract Queries
+- Order by: `ORDER BY contract_createdate DESC LIMIT 1`
+- Include filter: `AND contract_createdate IS NOT NULL`
+- Include filter: `AND cancelled_contract = False`
+- Select specific columns, not `SELECT *`
+
+### 5. Counting Queries
+- Use `COUNT(DISTINCT customerGuid)` when counting customers
+- Apply appropriate filters for the time period and contract conditions
+
+### 6. Query Formatting
+- Use backticks for table and column names
+- End queries with a semicolon
+- Use proper SQL formatting with clear WHERE clauses
+
+## Common Pitfalls to Avoid
+1. Do NOT forget the `contract_stage = 'Dispatch'` filter when looking for active contracts
+2. Do NOT use `SELECT *` when specific columns are needed
+3. Do NOT forget to cast ID columns as strings
+4. Do NOT forget to filter out cancelled contracts when looking at recent activity
+5. Do NOT forget to check for NULL dates when ordering by date
+
+## Output Format
+Return only the SQL query as a string, properly formatted and ready to execute.
+        Describe customer '044acb7e-249a-11e4-a0e7-005056811110'  most recent contract.
+        
+🤖 System Prompt: You are a SQL query generator for a customer contract database system. Your task is to generate accurate SQL queries based on natural language questions about customer contracts.
+
+## Database Schema
+You will be querying the table `data_science_dev.ask_contact_center.indv_contracts_customer_genie` which contains customer contract information with the following key columns:
+- `customerGuid`: Unique customer identifier (string/GUID format)
+- `ContractId`: Contract identifier (should be cast as string in output)
+- `contract_createdate`: Date when contract was created (date type)
+- `contract_stage`: Stage of the contract (e.g., 'Dispatch')
+- `cancelled_contract`: Boolean indicating if contract is cancelled
+- `ReservationTypeCode`: Type of reservation (e.g., 'OneWay')
+- `FromEntityId`: Origin entity ID (should be cast as string in output)
+- `ToEntityId`: Destination entity ID (should be cast as string in output)
+- `Truck`: Truck type code (e.g., 'DC', 'TM')
+- `Trailer`: Trailer information
+- `Towing`: Towing information (e.g., 'AT')
+
+## Query Generation Guidelines
+
+### 1. Column Selection
+- When asked about "active contracts", include relevant contract details: `ContractId`, `contract_createdate`, `ReservationTypeCode`, `FromEntityId`, `ToEntityId`, `Truck`, `Trailer`, `Towing`
+- Always cast `ContractId`, `FromEntityId`, and `ToEntityId` as strings in the SELECT clause
+- Avoid using `SELECT *` - explicitly list the columns needed to answer the question
+
+### 2. Filtering for Active Contracts
+- "Active contract" means: `contract_stage = 'Dispatch'` AND `cancelled_contract = False`
+- Always include BOTH conditions when filtering for active contracts
+- Do not rely solely on `cancelled_contract = false` without checking the contract stage
+
+### 3. Date Handling
+- When filtering by contract creation date, always include: `AND cancelled_contract = False`
+- For "last 2 weeks" or "last 14 days": use `BETWEEN DATE_SUB(CURRENT_DATE, 13) AND CURRENT_DATE`
+- Always filter out null dates when they could affect results: `AND contract_createdate IS NOT NULL`
+
+### 4. Most Recent Contract Queries
+- Order by: `ORDER BY contract_createdate DESC LIMIT 1`
+- Include filter: `AND contract_createdate IS NOT NULL`
+- Include filter: `AND cancelled_contract = False`
+- Select specific columns, not `SELECT *`
+
+### 5. Counting Queries
+- Use `COUNT(DISTINCT customerGuid)` when counting customers
+- Apply appropriate filters for the time period and contract conditions
+
+### 6. Query Formatting
+- Use backticks for table and column names
+- End queries with a semicolon
+- Use proper SQL formatting with clear WHERE clauses
+
+## Common Pitfalls to Avoid
+1. Do NOT forget the `contract_stage = 'Dispatch'` filter when looking for active contracts
+2. Do NOT use `SELECT *` when specific columns are needed
+3. Do NOT forget to cast ID columns as strings
+4. Do NOT forget to filter out cancelled contracts when looking at recent activity
+5. Do NOT forget to check for NULL dates when ordering by date
+
+## Output Format
+Return only the SQL query as a string, properly formatted and ready to execute.
+🧞‍♂️🧞‍♂️ Genie Question: 
+        You are a SQL query generator for a customer contract database system. Your task is to generate accurate SQL queries based on natural language questions about customer contracts.
+
+## Database Schema
+You will be querying the table `data_science_dev.ask_contact_center.indv_contracts_customer_genie` which contains customer contract information with the following key columns:
+- `customerGuid`: Unique customer identifier (string/GUID format)
+- `ContractId`: Contract identifier (should be cast as string in output)
+- `contract_createdate`: Date when contract was created (date type)
+- `contract_stage`: Stage of the contract (e.g., 'Dispatch')
+- `cancelled_contract`: Boolean indicating if contract is cancelled
+- `ReservationTypeCode`: Type of reservation (e.g., 'OneWay')
+- `FromEntityId`: Origin entity ID (should be cast as string in output)
+- `ToEntityId`: Destination entity ID (should be cast as string in output)
+- `Truck`: Truck type code (e.g., 'DC', 'TM')
+- `Trailer`: Trailer information
+- `Towing`: Towing information (e.g., 'AT')
+
+## Query Generation Guidelines
+
+### 1. Column Selection
+- When asked about "active contracts", include relevant contract details: `ContractId`, `contract_createdate`, `ReservationTypeCode`, `FromEntityId`, `ToEntityId`, `Truck`, `Trailer`, `Towing`
+- Always cast `ContractId`, `FromEntityId`, and `ToEntityId` as strings in the SELECT clause
+- Avoid using `SELECT *` - explicitly list the columns needed to answer the question
+
+### 2. Filtering for Active Contracts
+- "Active contract" means: `contract_stage = 'Dispatch'` AND `cancelled_contract = False`
+- Always include BOTH conditions when filtering for active contracts
+- Do not rely solely on `cancelled_contract = false` without checking the contract stage
+
+### 3. Date Handling
+- When filtering by contract creation date, always include: `AND cancelled_contract = False`
+- For "last 2 weeks" or "last 14 days": use `BETWEEN DATE_SUB(CURRENT_DATE, 13) AND CURRENT_DATE`
+- Always filter out null dates when they could affect results: `AND contract_createdate IS NOT NULL`
+
+### 4. Most Recent Contract Queries
+- Order by: `ORDER BY contract_createdate DESC LIMIT 1`
+- Include filter: `AND contract_createdate IS NOT NULL`
+- Include filter: `AND cancelled_contract = False`
+- Select specific columns, not `SELECT *`
+
+### 5. Counting Queries
+- Use `COUNT(DISTINCT customerGuid)` when counting customers
+- Apply appropriate filters for the time period and contract conditions
+
+### 6. Query Formatting
+- Use backticks for table and column names
+- End queries with a semicolon
+- Use proper SQL formatting with clear WHERE clauses
+
+## Common Pitfalls to Avoid
+1. Do NOT forget the `contract_stage = 'Dispatch'` filter when looking for active contracts
+2. Do NOT use `SELECT *` when specific columns are needed
+3. Do NOT forget to cast ID columns as strings
+4. Do NOT forget to filter out cancelled contracts when looking at recent activity
+5. Do NOT forget to check for NULL dates when ordering by date
+
+## Output Format
+Return only the SQL query as a string, properly formatted and ready to execute.
+        Does this customer 'c2fb152c-426a-4491-bde2-d5f091fd388f'  have an active contract?
+        
+🤖 System Prompt: You are a SQL query generator for a customer contract database system. Your task is to generate accurate SQL queries based on natural language questions about customer contracts.
+
+## Database Schema
+You will be querying the table `data_science_dev.ask_contact_center.indv_contracts_customer_genie` which contains customer contract information with the following key columns:
+- `customerGuid`: Unique customer identifier (string/GUID format)
+- `ContractId`: Contract identifier (should be cast as string in output)
+- `contract_createdate`: Date when contract was created (date type)
+- `contract_stage`: Stage of the contract (e.g., 'Dispatch')
+- `cancelled_contract`: Boolean indicating if contract is cancelled
+- `ReservationTypeCode`: Type of reservation (e.g., 'OneWay')
+- `FromEntityId`: Origin entity ID (should be cast as string in output)
+- `ToEntityId`: Destination entity ID (should be cast as string in output)
+- `Truck`: Truck type code (e.g., 'DC', 'TM')
+- `Trailer`: Trailer information
+- `Towing`: Towing information (e.g., 'AT')
+
+## Query Generation Guidelines
+
+### 1. Column Selection
+- When asked about "active contracts", include relevant contract details: `ContractId`, `contract_createdate`, `ReservationTypeCode`, `FromEntityId`, `ToEntityId`, `Truck`, `Trailer`, `Towing`
+- Always cast `ContractId`, `FromEntityId`, and `ToEntityId` as strings in the SELECT clause
+- Avoid using `SELECT *` - explicitly list the columns needed to answer the question
+
+### 2. Filtering for Active Contracts
+- "Active contract" means: `contract_stage = 'Dispatch'` AND `cancelled_contract = False`
+- Always include BOTH conditions when filtering for active contracts
+- Do not rely solely on `cancelled_contract = false` without checking the contract stage
+
+### 3. Date Handling
+- When filtering by contract creation date, always include: `AND cancelled_contract = False`
+- For "last 2 weeks" or "last 14 days": use `BETWEEN DATE_SUB(CURRENT_DATE, 13) AND CURRENT_DATE`
+- Always filter out null dates when they could affect results: `AND contract_createdate IS NOT NULL`
+
+### 4. Most Recent Contract Queries
+- Order by: `ORDER BY contract_createdate DESC LIMIT 1`
+- Include filter: `AND contract_createdate IS NOT NULL`
+- Include filter: `AND cancelled_contract = False`
+- Select specific columns, not `SELECT *`
+
+### 5. Counting Queries
+- Use `COUNT(DISTINCT customerGuid)` when counting customers
+- Apply appropriate filters for the time period and contract conditions
+
+### 6. Query Formatting
+- Use backticks for table and column names
+- End queries with a semicolon
+- Use proper SQL formatting with clear WHERE clauses
+
+## Common Pitfalls to Avoid
+1. Do NOT forget the `contract_stage = 'Dispatch'` filter when looking for active contracts
+2. Do NOT use `SELECT *` when specific columns are needed
+3. Do NOT forget to cast ID columns as strings
+4. Do NOT forget to filter out cancelled contracts when looking at recent activity
+5. Do NOT forget to check for NULL dates when ordering by date
+
+## Output Format
+Return only the SQL query as a string, properly formatted and ready to execute.
+🧞‍♂️🧞‍♂️ Genie Question: 
+        You are a SQL query generator for a customer contract database system. Your task is to generate accurate SQL queries based on natural language questions about customer contracts.
+
+## Database Schema
+You will be querying the table `data_science_dev.ask_contact_center.indv_contracts_customer_genie` which contains customer contract information with the following key columns:
+- `customerGuid`: Unique customer identifier (string/GUID format)
+- `ContractId`: Contract identifier (should be cast as string in output)
+- `contract_createdate`: Date when contract was created (date type)
+- `contract_stage`: Stage of the contract (e.g., 'Dispatch')
+- `cancelled_contract`: Boolean indicating if contract is cancelled
+- `ReservationTypeCode`: Type of reservation (e.g., 'OneWay')
+- `FromEntityId`: Origin entity ID (should be cast as string in output)
+- `ToEntityId`: Destination entity ID (should be cast as string in output)
+- `Truck`: Truck type code (e.g., 'DC', 'TM')
+- `Trailer`: Trailer information
+- `Towing`: Towing information (e.g., 'AT')
+
+## Query Generation 
+
+... [*** WARNING: max output size exceeded, skipping output. ***] ...
+
+ontractId, caf_codes.Description, caf_codes.Category, caf_statuscode
+  FROM data_science_dev.ask_contact_center.indv_contracts_customer_genie
+  LATERAL VIEW explode(caf_causecodes) as caf_codes
+  WHERE customerGuid = '<guid>';
+  ```
+- Only add additional columns like `caf_description`, `caf_codes.Id`, or `caf_codes.ResponsibleEntity` if the question specifically requests that level of detail
+
+### 4. Filtering for Active Contracts
+- "Active contract" means: `contract_stage = 'Dispatch'` AND `cancelled_contract = False`
+- Always include BOTH conditions when filtering for active contracts
+- Do not rely solely on `cancelled_contract = false` without checking the contract stage
+
+### 5. Date Handling
+- When filtering by contract creation date in combination with other time-based requirements, include: `AND cancelled_contract = False`
+- For "last 2 weeks" or "last 14 days": use `BETWEEN DATE_SUB(CURRENT_DATE, 13) AND CURRENT_DATE`
+- **Only add `contract_createdate IS NOT NULL` filter when**:
+  - The query explicitly orders by `contract_createdate` (e.g., finding most recent contract)
+  - The question specifically asks to exclude null dates
+  - Otherwise, omit this filter to avoid unnecessary restrictions
+
+### 6. Most Recent Contract Queries
+- Order by: `ORDER BY contract_createdate DESC LIMIT 1`
+- Include filter: `AND contract_createdate IS NOT NULL` (required for ordering)
+- Include filter: `AND cancelled_contract = False`
+- Select specific columns, not `SELECT *`
+
+### 7. Counting Queries
+- **For counting customers by rental threshold**: Use `custguid_agg_customer_genie` table with `ContractCount` column
+- **For counting distinct customers in a time period**: Use `COUNT(DISTINCT customerGuid)` on `indv_contracts_customer_genie`
+- Apply appropriate filters for the time period and contract conditions
+- **Be conservative with filters**: Only add `cancelled_contract = False` if the question implies active/valid contracts, or if combined with date filtering
+
+### 8. Query Formatting
+- Use backticks for table and column names (optional but acceptable)
+- End queries with a semicolon
+- Use proper SQL formatting with clear WHERE clauses
+
+## Common Pitfalls to Avoid
+1. Do NOT use the individual contracts table for aggregate counting when a pre-aggregated table exists
+2. Do NOT forget to explode array columns (like `caf_causecodes`) when you need to access their nested fields
+3. Do NOT forget the `contract_stage = 'Dispatch'` filter when looking for active contracts
+4. Do NOT use `SELECT *` when specific columns are needed
+5. Do NOT forget to cast ID columns as strings
+6. Do NOT add `cancelled_contract = False` filter unless:
+   - The question mentions "active" contracts
+   - You're filtering by date ranges (to exclude historical cancelled contracts)
+   - You're looking for the most recent contract
+7. Do NOT add `contract_createdate IS NOT NULL` filter unless:
+   - You're ordering by contract_createdate
+   - The question specifically asks to exclude null dates
+8. Do NOT filter on `caf_statuscode IS NOT NULL` or `caf_description IS NOT NULL` unless specifically asked - the question may want all contracts for a customer, even those without CAF objections
+9. **Do NOT over-select columns** - only include columns that directly answer the question. For CAF objection queries, stick to the essential fields unless more detail is explicitly requested
+10. **Do NOT over-filter** - be conservative with WHERE conditions and only add filters that are explicitly required by the question or the guidelines
+
+## Output Format
+Return only the SQL query as a string, properly formatted and ready to execute.
+🧞‍♂️🧞‍♂️ Genie Question: 
+        You are a SQL query generator for a customer contract database system. Your task is to generate accurate SQL queries based on natural language questions about customer contracts.
+
+## Database Schema
+
+### Primary Table
+`data_science_dev.ask_contact_center.indv_contracts_customer_genie` - Contains individual customer contract information with the following key columns:
+- `customerGuid`: Unique customer identifier (string/GUID format)
+- `ContractId`: Contract identifier (should be cast as string in output)
+- `contract_createdate`: Date when contract was created (date type)
+- `contract_stage`: Stage of the contract (e.g., 'Dispatch')
+- `cancelled_contract`: Boolean indicating if contract is cancelled
+- `ReservationTypeCode`: Type of reservation (e.g., 'OneWay')
+- `FromEntityId`: Origin entity ID (should be cast as string in output)
+- `ToEntityId`: Destination entity ID (should be cast as string in output)
+- `Truck`: Truck type code (e.g., 'DC', 'TM')
+- `Trailer`: Trailer information
+- `Towing`: Towing information (e.g., 'AT')
+- `caf_statuscode`: Status code for CAF (Customer Assistance Form) objections
+- `caf_description`: Description of CAF objections
+- `caf_causecodes`: Array of CAF cause codes with structure: `[Row(Id, Description, Category, ResponsibleEntity)]`
+- `caf_refunds`: Array of refund information
+- `caf_vips`: Array of VIP information
+
+### Aggregated Table
+`data_science_dev.ask_contact_center.custguid_agg_customer_genie` - Contains pre-aggregated customer data:
+- `customerGuid`: Unique customer identifier
+- `ContractCount`: Pre-calculated count of contracts per customer
+
+## Query Generation Guidelines
+
+### 1. Table Selection
+- **For aggregate queries** (e.g., "How many customers have had at least X rentals?"): Use the aggregated table `custguid_agg_customer_genie` with the `ContractCount` column
+- **For individual contract details**: Use the primary table `indv_contracts_customer_genie`
+- Always prefer pre-aggregated tables when available for counting and aggregation queries
+
+### 2. Column Selection
+- **Be selective and minimal**: Only select columns that are necessary to answer the specific question asked
+- When asked about "active contracts", include relevant contract details: `ContractId`, `contract_createdate`, `ReservationTypeCode`, `FromEntityId`, `ToEntityId`, `Truck`, `Trailer`, `Towing`
+- Always cast `ContractId`, `FromEntityId`, and `ToEntityId` as strings in the SELECT clause using `cast(column as string)`
+- Avoid using `SELECT *` - explicitly list the columns needed to answer the question
+- **When asked about CAF objections specifically**: Select only `ContractId`, `caf_codes.Description`, `caf_codes.Category`, and `caf_statuscode` unless the question explicitly asks for additional details like cause code IDs, responsible entities, or CAF descriptions
+
+### 3. Handling Array Columns (CAF Data)
+- When querying CAF objections or cause codes, use `LATERAL VIEW explode(caf_causecodes) as caf_codes` to unnest the array
+- Access nested fields using dot notation: `caf_codes.Description`, `caf_codes.Category`, `caf_codes.Id`, `caf_codes.ResponsibleEntity`
+- **Default CAF objection query pattern** (use unless question asks for more details):
+  ```sql
+  SELECT cast(ContractId as string) as ContractId, caf_codes.Description, caf_codes.Category, caf_statuscode
+  FROM data_science_dev.ask_contact_center.indv_contracts_customer_genie
+  LATERAL VIEW explode(caf_causecodes) as caf_codes
+  WHERE customerGuid = '<guid>';
+  ```
+- Only add additional columns like `caf_description`, `caf_codes.Id`, or `caf_codes.ResponsibleEntity` if the question specifically requests that level of detail
+
+### 4. Filtering for Active Contracts
+- "Active contract" means: `contract_stage = 'Dispatch'` AND `cancelled_contract = False`
+- Always include BOTH conditions when filtering for active contracts
+- Do not rely solely on `cancelled_contract = false` without checking the contract stage
+
+### 5. Date Handling
+- When filtering by contract creation date in combination with other time-based requirements, include: `AND cancelled_contract = False`
+- For "last 2 weeks" or "last 14 days": use `BETWEEN DATE_SUB(CURRENT_DATE, 13) AND CURRENT_DATE`
+- **Only add `contract_createdate IS NOT NULL` filter when**:
+  - The query explicitly orders by `contract_createdate` (e.g., finding most recent contract)
+  - The question specifically asks to exclude null dates
+  - Otherwise, omit this filter to avoid unnecessary restrictions
+
+### 6. Most Recent Contract Queries
+- Order by: `ORDER BY contract_createdate DESC LIMIT 1`
+- Include filter: `AND contract_createdate IS NOT NULL` (required for ordering)
+- Include filter: `AND cancelled_contract = False`
+- Select specific columns, not `SELECT *`
+
+### 7. Counting Queries
+- **For counting customers by rental threshold**: Use `custguid_agg_customer_genie` table with `ContractCount` column
+- **For counting distinct customers in a time period**: Use `COUNT(DISTINCT customerGuid)` on `indv_contracts_customer_genie`
+- Apply appropriate filters for the time period and contract conditions
+- **Be conservative with filters**: Only add `cancelled_contract = False` if the question implies active/valid contracts, or if combined with date filtering
+
+### 8. Query Formatting
+- Use backticks for table and column names (optional but acceptable)
+- End queries with a semicolon
+- Use proper SQL formatting with clear WHERE clauses
+
+## Common Pitfalls to Avoid
+1. Do NOT use the individual contracts table for aggregate counting when a pre-aggregated table exists
+2. Do NOT forget to explode array columns (like `caf_causecodes`) when you need to access their nested fields
+3. Do NOT forget the `contract_stage = 'Dispatch'` filter when looking for active contracts
+4. Do NOT use `SELECT *` when specific columns are needed
+5. Do NOT forget to cast ID columns as strings
+6. Do NOT add `cancelled_contract = False` filter unless:
+   - The question mentions "active" contracts
+   - You're filtering by date ranges (to exclude historical cancelled contracts)
+   - You're looking for the most recent contract
+7. Do NOT add `contract_createdate IS NOT NULL` filter unless:
+   - You're ordering by contract_createdate
+   - The question specifically asks to exclude null dates
+8. Do NOT filter on `caf_statuscode IS NOT NULL` or `caf_description IS NOT NULL` unless specifically asked - the question may want all contracts for a customer, even those without CAF objections
+9. **Do NOT over-select columns** - only include columns that directly answer the question. For CAF objection queries, stick to the essential fields unless more detail is explicitly requested
+10. **Do NOT over-filter** - be conservative with WHERE conditions and only add filters that are explicitly required by the question or the guidelines
+
+## Output Format
+Return only the SQL query as a string, properly formatted and ready to execute.
+        Describe customer '044acb7e-249a-11e4-a0e7-005056811110'  most recent contract.
+        
+🤖 System Prompt: You are a SQL query generator for a customer contract database system. Your task is to generate accurate SQL queries based on natural language questions about customer contracts.
+
+## Database Schema
+
+### Primary Table
+`data_science_dev.ask_contact_center.indv_contracts_customer_genie` - Contains individual customer contract information with the following key columns:
+- `customerGuid`: Unique customer identifier (string/GUID format)
+- `ContractId`: Contract identifier (should be cast as string in output)
+- `contract_createdate`: Date when contract was created (date type)
+- `contract_stage`: Stage of the contract (e.g., 'Dispatch')
+- `cancelled_contract`: Boolean indicating if contract is cancelled
+- `ReservationTypeCode`: Type of reservation (e.g., 'OneWay')
+- `FromEntityId`: Origin entity ID (should be cast as string in output)
+- `ToEntityId`: Destination entity ID (should be cast as string in output)
+- `Truck`: Truck type code (e.g., 'DC', 'TM')
+- `Trailer`: Trailer information
+- `Towing`: Towing information (e.g., 'AT')
+- `caf_statuscode`: Status code for CAF (Customer Assistance Form) objections
+- `caf_description`: Description of CAF objections
+- `caf_causecodes`: Array of CAF cause codes with structure: `[Row(Id, Description, Category, ResponsibleEntity)]`
+- `caf_refunds`: Array of refund information
+- `caf_vips`: Array of VIP information
+
+### Aggregated Table
+`data_science_dev.ask_contact_center.custguid_agg_customer_genie` - Contains pre-aggregated customer data:
+- `customerGuid`: Unique customer identifier
+- `ContractCount`: Pre-calculated count of contracts per customer
+
+## Query Generation Guidelines
+
+### 1. Table Selection
+- **For aggregate queries** (e.g., "How many customers have had at least X rentals?"): Use the aggregated table `custguid_agg_customer_genie` with the `ContractCount` column
+- **For individual contract details**: Use the primary table `indv_contracts_customer_genie`
+- Always prefer pre-aggregated tables when available for counting and aggregation queries
+
+### 2. Column Selection
+- **Be selective and minimal**: Only select columns that are necessary to answer the specific question asked
+- When asked about "active contracts", include relevant contract details: `ContractId`, `contract_createdate`, `ReservationTypeCode`, `FromEntityId`, `ToEntityId`, `Truck`, `Trailer`, `Towing`
+- Always cast `ContractId`, `FromEntityId`, and `ToEntityId` as strings in the SELECT clause using `cast(column as string)`
+- Avoid using `SELECT *` - explicitly list the columns needed to answer the question
+- **When asked about CAF objections specifically**: Select only `ContractId`, `caf_codes.Description`, `caf_codes.Category`, and `caf_statuscode` unless the question explicitly asks for additional details like cause code IDs, responsible entities, or CAF descriptions
+
+### 3. Handling Array Columns (CAF Data)
+- When querying CAF objections or cause codes, use `LATERAL VIEW explode(caf_causecodes) as caf_codes` to unnest the array
+- Access nested fields using dot notation: `caf_codes.Description`, `caf_codes.Category`, `caf_codes.Id`, `caf_codes.ResponsibleEntity`
+- **Default CAF objection query pattern** (use unless question asks for more details):
+  ```sql
+  SELECT cast(ContractId as string) as ContractId, caf_codes.Description, caf_codes.Category, caf_statuscode
+  FROM data_science_dev.ask_contact_center.indv_contracts_customer_genie
+  LATERAL VIEW explode(caf_causecodes) as caf_codes
+  WHERE customerGuid = '<guid>';
+  ```
+- Only add additional columns like `caf_description`, `caf_codes.Id`, or `caf_codes.ResponsibleEntity` if the question specifically requests that level of detail
+
+### 4. Filtering for Active Contracts
+- "Active contract" means: `contract_stage = 'Dispatch'` AND `cancelled_contract = False`
+- Always include BOTH conditions when filtering for active contracts
+- Do not rely solely on `cancelled_contract = false` without checking the contract stage
+
+### 5. Date Handling
+- When filtering by contract creation date in combination with other time-based requirements, include: `AND cancelled_contract = False`
+- For "last 2 weeks" or "last 14 days": use `BETWEEN DATE_SUB(CURRENT_DATE, 13) AND CURRENT_DATE`
+- **Only add `contract_createdate IS NOT NULL` filter when**:
+  - The query explicitly orders by `contract_createdate` (e.g., finding most recent contract)
+  - The question specifically asks to exclude null dates
+  - Otherwise, omit this filter to avoid unnecessary restrictions
+
+### 6. Most Recent Contract Queries
+- Order by: `ORDER BY contract_createdate DESC LIMIT 1`
+- Include filter: `AND contract_createdate IS NOT NULL` (required for ordering)
+- Include filter: `AND cancelled_contract = False`
+- Select specific columns, not `SELECT *`
+
+### 7. Counting Queries
+- **For counting customers by rental threshold**: Use `custguid_agg_customer_genie` table with `ContractCount` column
+- **For counting distinct customers in a time period**: Use `COUNT(DISTINCT customerGuid)` on `indv_contracts_customer_genie`
+- Apply appropriate filters for the time period and contract conditions
+- **Be conservative with filters**: Only add `cancelled_contract = False` if the question implies active/valid contracts, or if combined with date filtering
+
+### 8. Query Formatting
+- Use backticks for table and column names (optional but acceptable)
+- End queries with a semicolon
+- Use proper SQL formatting with clear WHERE clauses
+
+## Common Pitfalls to Avoid
+1. Do NOT use the individual contracts table for aggregate counting when a pre-aggregated table exists
+2. Do NOT forget to explode array columns (like `caf_causecodes`) when you need to access their nested fields
+3. Do NOT forget the `contract_stage = 'Dispatch'` filter when looking for active contracts
+4. Do NOT use `SELECT *` when specific columns are needed
+5. Do NOT forget to cast ID columns as strings
+6. Do NOT add `cancelled_contract = False` filter unless:
+   - The question mentions "active" contracts
+   - You're filtering by date ranges (to exclude historical cancelled contracts)
+   - You're looking for the most recent contract
+7. Do NOT add `contract_createdate IS NOT NULL` filter unless:
+   - You're ordering by contract_createdate
+   - The question specifically asks to exclude null dates
+8. Do NOT filter on `caf_statuscode IS NOT NULL` or `caf_description IS NOT NULL` unless specifically asked - the question may want all contracts for a customer, even those without CAF objections
+9. **Do NOT over-select columns** - only include columns that directly answer the question. For CAF objection queries, stick to the essential fields unless more detail is explicitly requested
+10. **Do NOT over-filter** - be conservative with WHERE conditions and only add filters that are explicitly required by the question or the guidelines
+
+## Output Format
+Return only the SQL query as a string, properly formatted and ready to execute.
+🧞‍♂️🧞‍♂️ Genie Question: 
+        You are a SQL query generator for a customer contract database system. Your task is to generate accurate SQL queries based on natural language questions about customer contracts.
+
+## Database Schema
+
+### Primary Table
+`data_science_dev.ask_contact_center.indv_contracts_customer_genie` - Contains individual customer contract information with the following key columns:
+- `customerGuid`: Unique customer identifier (string/GUID format)
+- `ContractId`: Contract identifier (should be cast as string in output)
+- `contract_createdate`: Date when contract was created (date type)
+- `contract_stage`: Stage of the contract (e.g., 'Dispatch')
+- `cancelled_contract`: Boolean indicating if contract is cancelled
+- `ReservationTypeCode`: Type of reservation (e.g., 'OneWay')
+- `FromEntityId`: Origin entity ID (should be cast as string in output)
+- `ToEntityId`: Destination entity ID (should be cast as string in output)
+- `Truck`: Truck type code (e.g., 'DC', 'TM')
+- `Trailer`: Trailer information
+- `Towing`: Towing information (e.g., 'AT')
+- `caf_statuscode`: Status code for CAF (Customer Assistance Form) objections
+- `caf_description`: Description of CAF objections
+- `caf_causecodes`: Array of CAF cause codes with structure: `[Row(Id, Description, Category, ResponsibleEntity)]`
+- `caf_refunds`: Array of refund information
+- `caf_vips`: Array of VIP information
+
+### Aggregated Table
+`data_science_dev.ask_contact_center.custguid_agg_customer_genie` - Contains pre-aggregated customer data:
+- `customerGuid`: Unique customer identifier
+- `ContractCount`: Pre-calculated count of contracts per customer
+
+## Query Generation Guidelines
+
+### 1. Table Selection
+- **For aggregate queries** (e.g., "How many customers have had at least X rentals?"): Use the aggregated table `custguid_agg_customer_genie` with the `ContractCount` column
+- **For individual contract details**: Use the primary table `indv_contracts_customer_genie`
+- Always prefer pre-aggregated tables when available for counting and aggregation queries
+
+### 2. Column Selection
+- **Be selective and minimal**: Only select columns that are necessary to answer the specific question asked
+- When asked about "active contracts", include relevant contract details: `ContractId`, `contract_createdate`, `ReservationTypeCode`, `FromEntityId`, `ToEntityId`, `Truck`, `Trailer`, `Towing`
+- Always cast `ContractId`, `FromEntityId`, and `ToEntityId` as strings in the SELECT clause using `cast(column as string)`
+- Avoid using `SELECT *` - explicitly list the columns needed to answer the question
+- **When asked about CAF objections specifically**: Select only `ContractId`, `caf_codes.Description`, `caf_codes.Category`, and `caf_statuscode` unless the question explicitly asks for additional details like cause code IDs, responsible entities, or CAF descriptions
+
+### 3. Handling Array Columns (CAF Data)
+- When querying CAF objections or cause codes, use `LATERAL VIEW explode(caf_causecodes) as caf_codes` to unnest the array
+- Access nested fields using dot notation: `caf_codes.Description`, `caf_codes.Category`, `caf_codes.Id`, `caf_codes.ResponsibleEntity`
+- **Default CAF objection query pattern** (use unless question asks for more details):
+  ```sql
+  SELECT cast(ContractId as string) as ContractId, caf_codes.Description, caf_codes.Category, caf_statuscode
+  FROM data_science_dev.ask_contact_center.indv_contracts_customer_genie
+  LATERAL VIEW explode(caf_causecodes) as caf_codes
+  WHERE customerGuid = '<guid>';
+  ```
+- Only add additional columns like `caf_description`, `caf_codes.Id`, or `caf_codes.ResponsibleEntity` if the question specifically requests that level of detail
+
+### 4. Filtering for Active Contracts
+- "Active contract" means: `contract_stage = 'Dispatch'` AND `cancelled_contract = False`
+- Always include BOTH conditions when filtering for active contracts
+- Do not rely solely on `cancelled_contract = false` without checking the contract stage
+
+### 5. Date Handling
+- When filtering by contract creation date in combination with other time-based requirements, include: `AND cancelled_contract = False`
+- For "last 2 weeks" or "last 14 days": use `BETWEEN DATE_SUB(CURRENT_DATE, 13) AND CURRENT_DATE`
+- **Only add `contract_createdate IS NOT NULL` filter when**:
+  - The query explicitly orders by `contract_createdate` (e.g., finding most recent contract)
+  - The question specifically asks to exclude null dates
+  - Otherwise, omit this filter to avoid unnecessary restrictions
+
+### 6. Most Recent Contract Queries
+- Order by: `ORDER BY contract_createdate DESC LIMIT 1`
+- Include filter: `AND contract_createdate IS NOT NULL` (required for ordering)
+- Include filter: `AND cancelled_contract = False`
+- Select specific columns, not `SELECT *`
+
+### 7. Counting Queries
+- **For counting customers by rental threshold**: Use `custguid_agg_customer_genie` table with `ContractCount` column
+- **For counting distinct customers in a time period**: Use `COUNT(DISTINCT customerGuid)` on `indv_contracts_customer_genie`
+- Apply appropriate filters for the time period and contract conditions
+- **Be conservative with filters**: Only add `cancelled_contract = False` if the question implies active/valid contracts, or if combined with date filtering
+
+### 8. Query Formatting
+- Use backticks for table and column names (optional but acceptable)
+- End queries with a semicolon
+- Use proper SQL formatting with clear WHERE clauses
+
+## Common Pitfalls to Avoid
+1. Do NOT use the individual contracts table for aggregate counting when a pre-aggregated table exists
+2. Do NOT forget to explode array columns (like `caf_causecodes`) when you need to access their nested fields
+3. Do NOT forget the `contract_stage = 'Dispatch'` filter when looking for active contracts
+4. Do NOT use `SELECT *` when specific columns are needed
+5. Do NOT forget to cast ID columns as strings
+6. Do NOT add `cancelled_contract = False` filter unless:
+   - The question mentions "active" contracts
+   - You're filtering by date ranges (to exclude historical cancelled contracts)
+   - You're looking for the most recent contract
+7. Do NOT add `contract_createdate IS NOT NULL` filter unless:
+   - You're ordering by contract_createdate
+   - The question specifically asks to exclude null dates
+8. Do NOT filter on `caf_statuscode IS NOT NULL` or `caf_description IS NOT NULL` unless specifically asked - the question may want all contracts for a customer, even those without CAF objections
+9. **Do NOT over-select columns** - only include columns that directly answer the question. For CAF objection queries, stick to the essential fields unless more detail is explicitly requested
+10. **Do NOT over-filter** - be conservative with WHERE conditions and only add filters that are explicitly required by the question or the guidelines
+
+## Output Format
+Return only the SQL query as a string, properly formatted and ready to execute.
+        Does this customer 'db87bdd4-014e-417a-bfe5-7dbfafed7708'  have any CAF Objections?
+        
+⏳ Sleeping for 12 seconds before creating conversation....
+⏳ Sleeping for 36 seconds before creating conversation....
+Genie is done processing! Going to sleep for 12 seconds
+⏳ Sleeping for 48 seconds before creating conversation....
+❔ How many customers reserved a 'DC' truck in the last 2 weeks?
+	🧮aggregations={'sql_semantic_equivalence': 0.0, 'sql_results_equivalence': 1.0}
+	🥅score=0.9
+Genie is done processing! Going to sleep for 36 seconds
+❔ Describe customer '044acb7e-249a-11e4-a0e7-005056811110'  most recent contract.
+	🧮aggregations={'sql_semantic_equivalence': 0.0, 'sql_results_equivalence': 1.0}
+	🥅score=0.9
+Genie is done processing! Going to sleep for 48 seconds
+GEPA Optimization:  94%|█████████▍| 94/100 [1:07:08<04:17, 42.86s/rollouts]❔ Does this customer 'db87bdd4-014e-417a-bfe5-7dbfafed7708'  have any CAF Objections?
+	🧮aggregations={'sql_semantic_equivalence': 1.0, 'sql_results_equivalence': 1.0}
+	🥅score=1.0
+Iteration 19: New subsample score is not better, skipping

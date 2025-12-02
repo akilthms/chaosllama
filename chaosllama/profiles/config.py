@@ -8,6 +8,7 @@ class MLFLowConfig(BaseModel):
     MLFLOW_EXPERIMENTS: list
     MLFLOW_EXPERIMENT_PATH: str
     MLFLOW_CHECKPOINT_RUN: str
+    MLFLOW_GEPA_EXPERIMENT: str
 
 class GenieConfig(BaseModel):
     RUNTIME_GENIE_SPACE_ID: str
@@ -42,6 +43,7 @@ class RuntimeConfig(BaseModel):
     BASELINE_SCHEMA: str
     IS_CACHED: bool
     REFRESH_DASHBOARD: bool
+    PROMPT_REGISTRY: str
 
 
 class ScorerConfig(BaseModel):
@@ -60,7 +62,6 @@ class Config(BaseModel):
     genie: GenieConfig
     runtime: RuntimeConfig
     scorers: ScorerConfig
-    judges: dict
 
 
 
